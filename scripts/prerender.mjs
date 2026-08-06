@@ -138,6 +138,14 @@ writeFileSync(
   `User-agent: *\nAllow: /\n\nSitemap: ${SITE}/sitemap.xml\n`,
 );
 
+// llms.txt (https://llmstxt.org/): an H1, a one-line summary, then linked sections — the
+// single-page site's own anchors, so an LLM pointed at this file can jump straight to the
+// section it needs instead of having to fetch and parse the whole page.
+writeFileSync(
+  join(DIST, 'llms.txt'),
+  `# ${SITE_TITLE}\n\n> ${SITE_DESCRIPTION}\n\n## Pages\n\n- [Home](${SITE}/): Overview of Qalor's heating-network expertise and services.\n- [Ons team](${SITE}/#team): The team and their combined experience in the heating industry.\n- [Qalor](${SITE}/#qalor): What Qalor does and how it approaches energy projects.\n- [Ons werkproces](${SITE}/#how-it-works): The step-by-step process behind every heating-network project.\n- [Projecten](${SITE}/#projects): Completed heating-network projects.\n- [Contact](${SITE}/#footer): Contact details.\n`,
+);
+
 // ---- hydration gate -------------------------------------------------------------
 /**
  * Writing correct-looking HTML isn't enough: if the client's first render disagrees
