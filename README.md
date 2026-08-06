@@ -6,11 +6,9 @@ sustainable energy solutions. A **TurboRepo** monorepo: **React**, **TypeScript*
 gates every deploy on lint, typecheck, a Playwright layout/accessibility sweep, a
 Lighthouse audit and a bundle budget — nothing publishes unless all of it passes.
 
-[![CI](https://github.com/Artoriun/qalor/actions/workflows/ci.yml/badge.svg)](https://github.com/Artoriun/qalor/actions/workflows/ci.yml)
-
 **Live site:** https://qalor.nl/
 
-<img width="1080" height="2034" alt="Qalor homepage" src="https://github.com/user-attachments/assets/f7672313-afde-4bef-8abe-3dca3093e611" />
+<img width="1440" alt="Qalor homepage" src=".github/readme-assets/homepage.png" />
 
 ## Features
 
@@ -125,4 +123,6 @@ secrets (**Settings → Secrets and variables → Actions**):
 
 ## Licence
 
-Private.
+© Qalor. All rights reserved. This code is proprietary — it's shared here for
+portfolio/demonstration purposes only and isn't licensed for reuse, redistribution, or
+modification.
