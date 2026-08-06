@@ -3,6 +3,13 @@ import { Viewer, Worker } from '@react-pdf-viewer/core';
 import '@react-pdf-viewer/core/lib/styles/index.css';
 import '../../pdf-viewer-override.css';
 
+// packages/shared stores these as root-relative paths ('/pdfjs/...', '/documents/...')
+// since it can't depend on Vite's import.meta.env (that file is also imported directly by
+// Node in scripts/prerender.mjs, outside Vite entirely). Prefixing with BASE_URL here,
+// where Vite's env is actually available, is what makes these resolve correctly when the
+// site isn't served from the domain root (e.g. a GitHub Pages project site under a subpath).
+const withBase = (path: string) => `${import.meta.env.BASE_URL.replace(/\/$/, '')}${path}`;
+
 // Split out of Team.tsx on purpose: @react-pdf-viewer/core is ~120KB gzipped, of which
 // Lighthouse measured ~108KB unused on a page load that never opens the modal — which is
 // most of them, since Team itself renders unconditionally near the top of the page. That
@@ -99,8 +106,8 @@ const TeamPdfModal = ({ pdfKey, pdfPath, onClose }: TeamPdfModalProps) => {
         >
           ×
         </button>
-        <Worker workerUrl={PDF_WORKER_URL}>
-          <Viewer key={pdfKey} fileUrl={pdfPath} />
+        <Worker workerUrl={withBase(PDF_WORKER_URL)}>
+          <Viewer key={pdfKey} fileUrl={withBase(pdfPath)} />
         </Worker>
       </div>
     </div>
