@@ -1,99 +1,128 @@
 # Qalor Website
 
-A modern, responsive React website for Qalor - energy experts specializing in heating networks and sustainable energy solutions.
+The marketing site for Qalor — energy experts specializing in heating networks and
+sustainable energy solutions. A **TurboRepo** monorepo: **React**, **TypeScript** and
+**Vite** on the front, prerendered to static HTML for real content on first paint. CI
+gates every deploy on lint, typecheck, a Playwright layout/accessibility sweep, a
+Lighthouse audit and a bundle budget — nothing publishes unless all of it passes.
 
-## Link to Website
-https://qalor.nl/
+[![CI](https://github.com/Artoriun/qalor/actions/workflows/ci.yml/badge.svg)](https://github.com/Artoriun/qalor/actions/workflows/ci.yml)
 
-<img width="1080" height="2034" alt="Image" src="https://github.com/user-attachments/assets/f7672313-afde-4bef-8abe-3dca3093e611" />
+**Live site:** https://qalor.nl/
 
-## 🚀 Overview
+<img width="1080" height="2034" alt="Qalor homepage" src="https://github.com/user-attachments/assets/f7672313-afde-4bef-8abe-3dca3093e611" />
 
-Qalor is a professional consulting company focused on energy efficiency, heating networks, and sustainable energy solutions. This website showcases their expertise, team, and project portfolio with a modern, interactive design.
+## Features
 
-## ✨ Features
+- Single-page site — Hero, Team, Qalor/About, Werkproces, Projecten and Footer, all
+  anchor-scrolled from the nav. No client-side router: an earlier `react-router-dom`
+  dependency was dead weight (nothing ever rendered a `<Route>`) and got dropped in the
+  TypeScript port.
+- Prerendered on build: a real browser boots the built app and its DOM is written back
+  into `index.html`, so a visitor's first response is actual content, not a blank shell
+  waiting on JavaScript.
+- Team and project carousels — auto-advancing, drag/swipe-enabled, infinite-wrap.
+- Team member CVs open in a modal PDF viewer (`@react-pdf-viewer/core`).
+- Below-the-fold sections (Team, About, Werkproces, Projecten, Footer) are
+  `React.lazy()` + `Suspense` — only Hero/Navbar, the above-the-fold content, are in the
+  initial bundle.
+- Contact form component exists (`src/components/Contact`) but isn't wired into the page
+  yet — see the commented-out `<Contact />` in `App.tsx`.
 
-### 🎨 Interactive Design
-- **Smooth scroll animations** powered by AOS (Animate On Scroll)
-- **Responsive design** optimized for desktop, tablet, and mobile
-- **Modern gradient styling** with consistent orange branding
-- **Interactive hover effects** and click animations
-- **Particle background effects** for enhanced visual appeal
+## Tech Stack
 
-### 🧭 Navigation & UX
-- **Fixed navigation bar** with smooth scroll-to-section functionality
-- **Mobile hamburger menu** with animated transitions
-- **Orange dot hover effects** with click swelling animations
-- **Scroll position restoration** for seamless navigation experience
-- **Unified contact flow** - All contact buttons redirect to footer section
+| Technology | Purpose |
+|------------|---------|
+| **React** + **TypeScript** + **Vite** | UI, type safety, build & dev server |
+| **TurboRepo** + npm workspaces | Monorepo build orchestration |
+| **AOS** | Scroll-reveal on below-the-fold sections only — never on the Hero, see [Rendering & LCP](#rendering--lcp) |
+| **@react-pdf-viewer/core** | Team member CV modal |
+| **Biome** | Linting & formatting |
+| **Playwright** | Layout tests, the accessibility sweep, and the prerenderer |
+| **axe-core** | WCAG rules, run inside the Playwright suite |
+| **Lighthouse** | CI gate on accessibility/SEO/best-practices |
 
-### 📱 Component Sections
+## Project Structure
 
-#### Hero Section
-- **Full-screen gradient background** with hero image
-- **Interactive contact button** with smooth scroll to footer
-- **Responsive typography** adapting to screen sizes
-- **Call-to-action buttons** with smooth scroll navigation
+```
+.nvmrc                    # Node 22 — required
+playwright.config.ts      # 3 viewport projects (desktop, mobile portrait, mobile landscape)
+biome.json                 # lint + format config
+turbo.json                  # build/dev/typecheck task graph
+e2e/
+├── layout.spec.ts        # overflow, exactly one h1, footer bounds, hamburger menu, CV modal
+└── a11y.spec.ts           # axe sweep at every viewport
+scripts/
+├── prerender.mjs          # captures the built app's DOM into index.html + sitemap.xml/robots.txt
+├── check-budgets.mjs       # gzipped initial-payload budget
+└── check-lighthouse.mjs    # accessibility/SEO/best-practices thresholds on the built output
+packages/
+├── shared/src/index.ts    # typed project/team content + site constants — one file, no
+│                          #   relative imports; see the note at the top of that file for why
+└── web/                   # the Vite/React app
+    ├── public/            # PDF worker, team CVs, favicon
+    └── src/components/    # one folder per section
+```
 
-#### About Section (Qalor)
-- **Company introduction** with professional layout
-- **Feature highlights** with checkmark icons
-- **Responsive image gallery** showcasing company culture
-- **Mobile-optimized content** with adaptive spacing
+## Quick Start
 
-#### Work Process Section
-- **Step-by-step process visualization** with numbered circles
-- **Progressive gradient colors** from reddish-orange to light orange
-- **Interactive "Meer leren" buttons** redirecting to footer contact
-- **Detailed workflow descriptions** for client understanding
+```bash
+npm install
+npm run dev            # http://localhost:5173
+```
 
-#### Projects Portfolio
-- **Infinite carousel slider** showcasing completed projects
-- **Auto-advancing slides** with manual navigation controls
-- **Project details** including location, scope, and descriptions
-- **Responsive card layout** with professional imagery
+## Scripts
 
-#### Team Section
-- **Interactive team carousel** featuring key personnel
-- **Auto-sliding presentation** with navigation arrows and dots
-- **Professional team member cards** with photos and expertise
-- **Background image overlays** with blur effects
-- **Individual expertise descriptions** for each team member
-- **CV download functionality** for team members
+| Command | What it does |
+|---|---|
+| `npm run dev` | Start the Vite dev server |
+| `npm run build` | Typecheck-clean production build (`turbo run build`) |
+| `npm run typecheck` | `tsc --noEmit` across every package |
+| `npm run check` | Biome lint + format check |
+| `npm run format` | Biome format, writes fixes |
+| `npm run test:e2e` | Playwright layout + accessibility suite |
+| `npm run prerender` | Capture the built app's DOM into `index.html`; needs `npm run build` first |
+| `npm run check:budgets` | Gzipped initial-payload budget |
+| `npm run check:lighthouse` | Lighthouse gate; needs `build` + `prerender` first |
 
-#### Footer Section (Primary Contact Hub)
-- **Gradient background** matching hero section design
-- **Particle effects** for visual consistency
-- **Comprehensive contact information**:
-  - Email: pdk@qalor.nl (clickable mailto link)
-  - Phone: 06 112 16 938 (clickable tel link)
-  - Address: Lange Marktstraat 1, 8911AD, Leeuwarden (linked to Google Maps)
-  - **BTW-nummer:** NL005077048B43 (bold label)
-  - **IBAN:** NL94 ABNA 0134 0861 39 (bold label)
-- **Navigation menu** with smooth scroll links
-- **Company logo** (white version for contrast)
-- **Copyright information** and legal details
+## Rendering & LCP
 
-## 🛠️ Technical Stack
+The Hero section used to be both `React.lazy()`-loaded behind a Suspense fallback *and*
+marked `data-aos="fade-up"` — meaning first paint was a loading spinner, and even once
+loaded, AOS held it at `opacity: 0` until a scroll-triggered reveal fired. Both are gone:
+Hero and Navbar are eager, plain, undeferred, and carry no `data-aos`. Team lost its
+`data-aos` too — it's the first below-the-fold section, close enough to the fold that on
+some viewports it was still mid-fade when scanned, which showed up as a real,
+non-deterministic color-contrast failure (`e2e/a11y.spec.ts` caught it) and would have
+made the Lighthouse accessibility gate flaky in CI. Below-the-fold sections further down
+the page (About, Werkproces, Projecten, Footer) keep their scroll-reveal treatment —
+they're far enough down that this isn't a risk.
 
-### Core Technologies
-- **React 19.1.1** - Latest React with modern hooks and features
-- **Vite 7.1.2** - Lightning-fast build tool and development server
-- **React Router DOM 7.8.2** - Client-side routing
+## Testing
 
-### Styling & Animation
-- **CSS-in-JS** - Inline styles for component-scoped styling
-- **AOS 2.3.4** - Animate On Scroll library for scroll animations
-- **Custom CSS animations** - Hover effects, transitions, and interactions
-- **Responsive design** - Mobile-first approach with breakpoint optimizations
+`npm run test:e2e` runs layout assertions (no horizontal overflow, exactly one `h1`,
+nothing renders past the footer, the mobile hamburger menu works, the team CV modal
+opens/closes) and an axe-core accessibility sweep, both across desktop and two mobile
+viewports. `npm run check:lighthouse` audits the built, prerendered output and gates on
+accessibility/SEO/best-practices at 100 — performance is measured and printed but never
+gated, since a shared CI runner's timings vary by more than the thing being measured.
+`npm run check:budgets` is the deterministic half of that: a gzipped bundle-size ceiling.
 
-### PDF Integration
-- **@react-pdf-viewer/core** - PDF viewing capabilities
-- **@react-pdf-viewer/default-layout** - Pre-built PDF viewer layout
-- **react-pdf** - React PDF component library
-- **pdfjs-dist** - PDF.js for client-side PDF rendering
+**Known limit:** several project photos in `packages/web/src/assets/images/projects` are
+several megabytes, unoptimized — a real contributor to the (ungated) performance score.
+Worth a dedicated image-optimization pass; out of scope for this migration since it'd
+mean introducing an image CDN/transform pipeline (à la Cloudinary) this site doesn't have.
 
-### Development Tools
-- **ESLint** - Code linting with React-specific rules
-- **Vite Dev Server** - Hot Module Replacement (HMR) for development
-- **Legacy Peer Deps** - Compatibility handling for package dependencies
+## Deployment
+
+CI's `deploy` job builds, prerenders, and uploads `packages/web/dist/` over FTP to the
+live host on every push to `master` — never from a pull request. Needs three repo
+secrets (**Settings → Secrets and variables → Actions**):
+
+- `FTP_SERVER`, `FTP_USERNAME`, `FTP_PASSWORD`
+- Optionally a repo **variable** `FTP_SERVER_DIR` if the account's FTP root isn't the
+  site's document root (defaults to `/`)
+
+## Licence
+
+Private.

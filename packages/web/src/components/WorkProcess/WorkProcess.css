@@ -1,0 +1,20 @@
+.vertical-line-mobile {
+  position: absolute;
+  /* Centered on the number badge: the badge column is 60px wide and the circle fills
+     it exactly, so its true center is at 30px, not 60px (that was centered on the
+     column's right edge instead of the badge itself). */
+  left: 30px;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: linear-gradient(180deg, #ffa940, #f18825);
+  background-color: #f18825; /* fallback */
+  border-radius: 2px;
+  z-index: 0;
+  pointer-events: none;
+  transform: translateX(-50%);
+  -webkit-transform: translateX(-50%);
+  background-clip: padding-box;
+  -webkit-background-clip: padding-box;
+  will-change: transform;
+}

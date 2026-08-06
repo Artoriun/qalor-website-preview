@@ -11,6 +11,10 @@ node_modules
 dist
 dist-ssr
 *.local
+.turbo
+test-results
+playwright-report
+lighthouse-*.json
 
 # Editor directories and files
 .vscode/*

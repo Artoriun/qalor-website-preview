@@ -1,0 +1,172 @@
+name: CI
+
+# Validates every push and pull request, and publishes only if those checks pass.
+#
+# The deploy lives in this workflow behind `needs:` rather than in a separate one on the
+# same trigger. Two workflows on `push: master` run concurrently and the shorter usually
+# wins, so a commit with failing tests ships to production and the checks only tell you
+# afterwards. Keeping it here makes the ordering structural rather than a policy.
+on:
+  push:
+    branches: ['master']
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Lint, typecheck, build, budgets
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: Lint and format check
+        run: npm run check
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Build
+        run: npm run build
+
+      # Needs the build above: checks the gzipped initial-payload budget.
+      - name: Budgets
+        run: npm run check:budgets
+
+  e2e:
+    name: Layout, a11y and Lighthouse
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - run: npm ci
+
+      # Only Chromium: these are layout/a11y assertions against one engine, not a
+      # cross-browser matrix. Cached on the resolved version rather than reinstalled
+      # every run — the browser binaries alone are ~300MB.
+      - name: Get Playwright version
+        id: playwright-version
+        run: echo "version=$(node -p "require('./package-lock.json').packages['node_modules/@playwright/test'].version")" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v5
+        id: playwright-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright-version.outputs.version }}
+
+      - name: Install Chromium
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+
+      - name: Install Chromium's OS dependencies
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
+
+      - name: Run layout and accessibility tests
+        run: npm run test:e2e
+
+      # Accessibility, SEO and best-practices against the built, prerendered output.
+      - name: Build and prerender for audit
+        run: npm run build && npm run prerender
+
+      - name: Lighthouse
+        run: npm run check:lighthouse
+
+      - name: Summarise failures
+        if: failure()
+        run: |
+          {
+            echo '### Layout test failures'
+            echo '```'
+            sed -e 's/\x1b\[[0-9;]*m//g' test-results/*/error-context.md 2>/dev/null | head -80 \
+              || echo 'no error context captured'
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload report on failure
+        if: failure()
+        uses: actions/upload-artifact@v5
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
+
+  deploy:
+    name: Deploy via FTP
+    needs: [verify, e2e]
+    # Never from a pull request — a PR build must not publish to production.
+    if: github.ref == 'refs/heads/master' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    concurrency:
+      group: deploy
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - run: npm ci
+
+      # Needs a browser: the prerenderer boots the built app and writes the resulting DOM
+      # into index.html so a visitor's first response is real markup, not a blank shell.
+      - name: Get Playwright version
+        id: playwright-version
+        run: echo "version=$(node -p "require('./package-lock.json').packages['node_modules/@playwright/test'].version")" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v5
+        id: playwright-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright-version.outputs.version }}
+
+      - name: Install Chromium
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+
+      - name: Install Chromium's OS dependencies
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
+
+      - name: Build
+        run: npm run build
+
+      - name: Prerender, sitemap and robots
+        run: npm run prerender
+        env:
+          SITE_URL: https://qalor.nl
+
+      # server-dir is a repo variable (Settings -> Secrets and variables -> Actions ->
+      # Variables), not a secret — it's just a path, e.g. /public_html/. Defaults to the
+      # FTP account's own root if unset. FTP_SERVER/FTP_USERNAME/FTP_PASSWORD are repo
+      # secrets that need to be added before this job can actually deploy — see the
+      # migration plan for what this repo cannot set up on its own.
+      - name: Deploy over FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./packages/web/dist/
+          server-dir: ${{ vars.FTP_SERVER_DIR || '/' }}

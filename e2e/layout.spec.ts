@@ -1,0 +1,79 @@
+import { expect, test } from '@playwright/test';
+
+/**
+ * Layout assertions, not feature tests — the class of regression a human only notices on
+ * the wrong device: content overflowing sideways, elements rendering past the footer, a
+ * carousel that traps the page in a horizontal scrollbar. The project matrix (see
+ * playwright.config.ts) is viewports rather than browsers for the same reason.
+ *
+ * The site is a single page (qalor.nl has no client-side routing — see the migration
+ * plan for why react-router-dom got dropped), so every test here just targets '/'.
+ */
+
+test('has no horizontal overflow', async ({ page }) => {
+  await page.goto('/');
+  // scrollWidth beyond clientWidth is the definition of a sideways scrollbar. +1 for
+  // sub-pixel rounding, which is not a real overflow.
+  const overflows = await page.evaluate(() => {
+    const doc = document.documentElement;
+    return doc.scrollWidth > doc.clientWidth + 1;
+  });
+  expect(overflows, 'page scrolls horizontally').toBe(false);
+});
+
+test('has exactly one h1', async ({ page }) => {
+  await page.goto('/');
+  // Hero's h1 is the only one; About/Team/etc use h2/h3 for their headings.
+  await expect(page.locator('h1')).toHaveCount(1);
+});
+
+test('renders nothing below the footer', async ({ page }) => {
+  await page.goto('/');
+  const footer = page.locator('#footer');
+  await expect(footer).toBeVisible();
+  const stray = await page.evaluate(() => {
+    const footerEl = document.querySelector('#footer');
+    if (!footerEl) return 0;
+    const bottom = footerEl.getBoundingClientRect().bottom + window.scrollY;
+    return [...document.body.querySelectorAll('*')].filter((el) => {
+      const r = el.getBoundingClientRect();
+      if (r.width === 0 || r.height === 0) return false;
+      return r.top + window.scrollY > bottom + 1;
+    }).length;
+  });
+  expect(stray, 'content renders past the footer').toBe(0);
+});
+
+test('the mobile hamburger menu opens and its links are reachable', async ({ page }) => {
+  await page.goto('/');
+  const hamburger = page.locator('.navbar-hamburger');
+  // Desktop viewports hide the hamburger via CSS; only meaningful where it's actually shown.
+  test.skip(!(await hamburger.isVisible()), 'hamburger not shown at this viewport');
+
+  await hamburger.click();
+  // Scoped to the open menu — Footer has its own "Ons team"/"Projecten" nav links, so an
+  // unscoped locator matches both once Footer is no longer lazy-loaded.
+  const menu = page.locator('.navbar-mobile-menu');
+  await expect(menu.getByRole('button', { name: 'Ons team' })).toBeVisible();
+  await expect(menu.getByRole('button', { name: 'Projecten' })).toBeVisible();
+});
+
+test('opening a team member CV and closing it with Escape works', async ({ page }) => {
+  await page.goto('/');
+  // Team is a lazy-loaded, below-the-fold section — wait for its "CV" buttons to mount.
+  // The carousel renders the infinite-scroll wrap copies before the real slides in DOM
+  // order, and those wrap copies sit clipped outside the carousel's visible window
+  // (overflow: hidden), so .first() picks an unclickable off-screen button. The carousel
+  // starts centered on the first real member (Peter, see Team.tsx's initial
+  // currentSlide), which is the 3rd "CV" button in DOM order.
+  const cvButton = page.getByRole('button', { name: 'CV' }).nth(2);
+  await cvButton.waitFor({ state: 'visible', timeout: 15_000 });
+  await cvButton.click();
+
+  // @react-pdf-viewer/core renders its canvas asynchronously; the modal container itself
+  // is the reliable thing to assert on rather than waiting on PDF.js internals.
+  await expect(page.locator('.pdf-modal-container')).toBeVisible();
+
+  await page.keyboard.press('Escape');
+  await expect(page.locator('.pdf-modal-container')).toBeHidden();
+});

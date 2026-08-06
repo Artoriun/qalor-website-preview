@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="nl">
+  <head>
+    <meta charset="UTF-8" />
+    <!-- Every content image is Cloudinary-hosted, including the Hero photo (the LCP
+         candidate) — this starts the cross-origin DNS/TLS handshake immediately instead
+         of after React has rendered the <img> tag that would otherwise trigger it. -->
+    <link rel="preconnect" href="https://res.cloudinary.com" crossorigin />
+    <link rel="icon" type="image/png" href="/qalor Q.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Qalor — energiedeskundigen voor warmtenetten: advies, ontwerp en realisatie van energie-efficiënte warmteoplossingen voor gebouwen en wijken."
+    />
+    <title>Qalor</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
