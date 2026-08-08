@@ -72,7 +72,7 @@ const Hero = () => {
         transform: translateX(-50%);
         width: 6px;
         height: 6px;
-        background-color: #fff;
+        background-color: #000;
         border-radius: 50%;
         opacity: 0;
         transition: opacity 0.3s ease, transform 0.2s ease;
@@ -123,10 +123,10 @@ const Hero = () => {
           maxWidth: '1600px',
           margin: '0 auto',
           width: '100%',
-          // #B75F0C/#733C07: same hue as the brand orange, darkened to clear 4.5:1 against
-          // white — the mobile "Wat wij doen" button label sits directly on this at 16px,
-          // too small to qualify for the 3:1 large-text exception.
-          background: 'linear-gradient(135deg, #B75F0C, #733C07)',
+          // Full-brightness #FFA940/#F18825: everything on this panel is black text/icons,
+          // not white, so nothing here needs darkening to clear 4.5:1 — black on either
+          // stop is 8:1+.
+          background: 'linear-gradient(135deg, #FFA940, #F18825)',
           borderRadius: '20px',
           padding: '60px 40px',
           position: 'relative',
@@ -157,7 +157,7 @@ const Hero = () => {
               style={{
                 fontSize: isMobile ? '3rem' : '4rem',
                 marginBottom: '1rem',
-                color: '#fff',
+                color: '#000',
                 fontWeight: '700',
                 fontFamily:
                   'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", sans-serif',
@@ -170,7 +170,7 @@ const Hero = () => {
               style={{
                 fontSize: isMobile ? '1.6rem' : '2rem',
                 marginBottom: '2rem',
-                color: '#fff',
+                color: '#000',
                 fontWeight: '500',
                 fontFamily:
                   'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", sans-serif',
@@ -225,10 +225,10 @@ const Hero = () => {
                       width: '30px',
                       height: '30px',
                       borderRadius: '50%',
-                      backgroundColor: '#B75F0C',
+                      backgroundColor: '#F18825',
                       fontSize: '18px',
                       fontWeight: 'bold',
-                      color: '#fff',
+                      color: '#000',
                     }}
                   >
                     →
@@ -262,7 +262,7 @@ const Hero = () => {
                 style={{
                   padding: isMobile ? '0.8rem 1.5rem' : '1rem 2rem',
                   background: 'transparent',
-                  color: '#fff',
+                  color: '#000',
                   textDecoration: 'none',
                   borderRadius: '50px',
                   fontWeight: '600',

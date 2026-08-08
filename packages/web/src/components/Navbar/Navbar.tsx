@@ -181,10 +181,11 @@ const Navbar = () => {
           onClick={() => smoothScrollTo('footer')}
           className="navbar-desktop-contact"
           style={{
-            // #B75F0C: same hue as the logo's #F18825, darkened to the point it clears
-            // 4.5:1 against white — this button carries real body-size "Contact" text.
-            background: '#B75F0C',
-            color: '#fff',
+            // Full-brightness #F18825, not a darkened shade: black text on it clears 8.29:1
+            // (well past the 4.5:1 floor), so there's no need to darken the fill itself —
+            // only white-on-orange needed that, and black sidesteps the whole tradeoff.
+            background: '#F18825',
+            color: '#000',
             border: 'none',
             cursor: 'pointer',
             borderRadius: '50px',
@@ -194,10 +195,10 @@ const Navbar = () => {
             outline: 'none',
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.background = '#733C07';
+            e.currentTarget.style.background = '#D9720C';
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.background = '#B75F0C';
+            e.currentTarget.style.background = '#F18825';
           }}
         >
           <span
@@ -220,7 +221,7 @@ const Navbar = () => {
                 backgroundColor: '#fff',
                 fontSize: '16px',
                 fontWeight: 'bold',
-                color: '#B75F0C',
+                color: '#000',
                 pointerEvents: 'none', // Prevent hover effects on arrow
               }}
             >

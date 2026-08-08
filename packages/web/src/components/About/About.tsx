@@ -94,14 +94,14 @@ const About = () => {
                     width: '24px',
                     height: '24px',
                     borderRadius: '50%',
-                    background: '#B75F0C',
+                    background: '#F18825',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     flexShrink: 0,
                   }}
                 >
-                  <span style={{ color: '#fff', fontSize: '14px', fontWeight: 'bold' }}>✓</span>
+                  <span style={{ color: '#000', fontSize: '14px', fontWeight: 'bold' }}>✓</span>
                 </div>
 
                 <h3 style={{ fontSize: '1.5rem', margin: '0', color: '#000' }}>Wat is Qalor?</h3>
@@ -141,14 +141,14 @@ const About = () => {
                     width: '24px',
                     height: '24px',
                     borderRadius: '50%',
-                    background: '#B75F0C',
+                    background: '#F18825',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     flexShrink: 0,
                   }}
                 >
-                  <span style={{ color: '#fff', fontSize: '14px', fontWeight: 'bold' }}>✓</span>
+                  <span style={{ color: '#000', fontSize: '14px', fontWeight: 'bold' }}>✓</span>
                 </div>
 
                 <h3 style={{ fontSize: '1.5rem', margin: '0', color: '#000' }}>
@@ -186,14 +186,14 @@ const About = () => {
                     width: '24px',
                     height: '24px',
                     borderRadius: '50%',
-                    background: '#B75F0C',
+                    background: '#F18825',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     flexShrink: 0,
                   }}
                 >
-                  <span style={{ color: '#fff', fontSize: '14px', fontWeight: 'bold' }}>✓</span>
+                  <span style={{ color: '#000', fontSize: '14px', fontWeight: 'bold' }}>✓</span>
                 </div>
 
                 <h3 style={{ fontSize: '1.5rem', margin: '0', color: '#000' }}>Ervaring</h3>

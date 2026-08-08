@@ -3,7 +3,7 @@ import qalorLogo from '../../assets/images/figures/qalorlogowhite.png';
 import Particles from '../Particles/Particles';
 
 const linkStyle: React.CSSProperties = {
-  color: 'white',
+  color: 'black',
   background: 'none',
   border: 'none',
   cursor: 'pointer',
@@ -15,7 +15,7 @@ const linkStyle: React.CSSProperties = {
 };
 
 const contactLinkStyle: React.CSSProperties = {
-  color: 'white',
+  color: 'black',
   textDecoration: 'none',
   outline: 'none',
 };
@@ -50,9 +50,11 @@ const Footer = () => {
       data-aos="fade-in"
       style={{
         padding: isMobile ? '2rem 1rem' : '2rem 20px',
-        // #B75F0C/#733C07: same hue as the brand orange, darkened to clear 4.5:1 against
-        // white — this section has real body text (contact details) directly on top.
-        background: 'linear-gradient(135deg, #B75F0C, #733C07)',
+        // Full-brightness #FFA940/#F18825, not a darkened shade: black text clears 8-11:1
+        // against both stops, so the fill doesn't need to be darkened at all — only
+        // white-on-orange forced that tradeoff. The logo image stays white; WCAG's own
+        // logotype exception covers it, and it reads fine against bright orange.
+        background: 'linear-gradient(135deg, #FFA940, #F18825)',
         position: 'relative',
         overflow: 'hidden',
       }}
@@ -91,7 +93,7 @@ const Footer = () => {
             <p
               style={{
                 lineHeight: '1.6',
-                color: 'white',
+                color: 'black',
                 fontFamily:
                   'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", sans-serif',
               }}
@@ -106,7 +108,7 @@ const Footer = () => {
               style={{
                 fontSize: '1.2rem',
                 marginBottom: '1rem',
-                color: 'white',
+                color: 'black',
                 fontFamily:
                   'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", sans-serif',
               }}
@@ -147,7 +149,7 @@ const Footer = () => {
               style={{
                 fontSize: '1.2rem',
                 marginBottom: '1rem',
-                color: 'white',
+                color: 'black',
                 fontFamily:
                   'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", sans-serif',
               }}
@@ -157,7 +159,7 @@ const Footer = () => {
             <div
               style={{
                 lineHeight: '2',
-                color: 'white',
+                color: 'black',
                 fontFamily:
                   'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", sans-serif',
               }}
@@ -189,10 +191,10 @@ const Footer = () => {
 
         <div
           style={{
-            borderTop: '1px solid rgba(255,255,255,0.6)',
+            borderTop: '1px solid rgba(0,0,0,0.3)',
             paddingTop: '1rem',
             textAlign: 'left',
-            color: 'white',
+            color: 'black',
           }}
         >
           <p

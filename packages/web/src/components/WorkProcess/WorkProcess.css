@@ -7,8 +7,8 @@
   top: 0;
   bottom: 0;
   width: 3px;
-  background: linear-gradient(180deg, #e5770f, #d9720c);
-  background-color: #e5770f; /* fallback */
+  background: linear-gradient(180deg, #ffa940, #f18825);
+  background-color: #f18825; /* fallback */
   border-radius: 2px;
   z-index: 0;
   pointer-events: none;

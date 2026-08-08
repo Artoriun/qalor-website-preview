@@ -34,7 +34,7 @@ const numberBadgeStyle = (
   height: compact ? '60px' : '80px',
   borderRadius: '50%',
   background: gradient,
-  color: '#fff',
+  color: '#000',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
@@ -64,9 +64,9 @@ const STEPS: Step[] = [
     image: nettekeningImg,
     alt: 'AutoCAD Nettekening',
     // All three steps share one gradient (the previous per-step variants were also part
-    // of the inconsistent-orange problem). Same hue as the logo's #F18825, darkened just
-    // enough to clear 3:1 against white — fine here since the badge digits are large/bold.
-    gradient: 'linear-gradient(135deg, #E5770F, #D9720C)',
+    // of the inconsistent-orange problem). Full brightness: the digits are black, not
+    // white, so nothing here needs darkening for contrast.
+    gradient: 'linear-gradient(135deg, #FFA940, #F18825)',
     shadow: '0 4px 15px rgba(241,136,37,0.3)',
   },
   {
@@ -75,7 +75,7 @@ const STEPS: Step[] = [
     body: 'Een betrouwbare bepaling van de vermogensbehoefte van het warmteproject vereist dat er op basis van diverse openbare bronnen, waaronder het BAG-register en Atlas Leefomgeving, er een complete gebouwendatabase opgesteld wordt.',
     image: gebouwendatabaseImg,
     alt: 'Gebouwendatabase',
-    gradient: 'linear-gradient(135deg, #E5770F, #D9720C)',
+    gradient: 'linear-gradient(135deg, #FFA940, #F18825)',
     shadow: '0 4px 15px rgba(241,136,37,0.3)',
   },
   {
@@ -84,7 +84,7 @@ const STEPS: Step[] = [
     body: "Op basis van de AutoCAD tekening, de woningendatabase en de bepaling van het concept en de investeringen van de energie-opwekinstallatie wordt een uitgebreid financieel model in Excel gevuld, waarbij op basis van verschillende uitgangspunten diverse scenario's worden gemaakt.",
     image: berekeningImg,
     alt: 'Exploitatieberekening',
-    gradient: 'linear-gradient(135deg, #E5770F, #D9720C)',
+    gradient: 'linear-gradient(135deg, #FFA940, #F18825)',
     shadow: '0 4px 15px rgba(241,136,37,0.3)',
   },
 ];
@@ -201,7 +201,7 @@ const WorkProcess = () => {
                 top: '80px',
                 bottom: '80px',
                 width: '3px',
-                background: 'linear-gradient(180deg, #E5770F, #D9720C)',
+                background: 'linear-gradient(180deg, #FFA940, #F18825)',
                 transform: 'translateX(-50%)',
                 zIndex: 1,
                 borderRadius: '2px',
