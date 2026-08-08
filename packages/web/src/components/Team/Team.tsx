@@ -489,7 +489,7 @@ const Team = () => {
                                     backgroundColor: '#F18825',
                                     fontSize: '13px',
                                     fontWeight: 'bold',
-                                    color: '#000',
+                                    color: '#2B1400',
                                     marginLeft: '4px',
                                   }}
                                 >
@@ -525,7 +525,7 @@ const Team = () => {
                 borderRadius: '50%',
                 border: '2px solid #F18825',
                 backgroundColor: '#F18825',
-                color: '#000',
+                color: '#2B1400',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
@@ -549,7 +549,7 @@ const Team = () => {
                 borderRadius: '50%',
                 border: '2px solid #F18825',
                 backgroundColor: '#F18825',
-                color: '#000',
+                color: '#2B1400',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',

@@ -72,7 +72,7 @@ const Hero = () => {
         transform: translateX(-50%);
         width: 6px;
         height: 6px;
-        background-color: #000;
+        background-color: #2B1400;
         border-radius: 50%;
         opacity: 0;
         transition: opacity 0.3s ease, transform 0.2s ease;
@@ -123,9 +123,9 @@ const Hero = () => {
           maxWidth: '1600px',
           margin: '0 auto',
           width: '100%',
-          // Full-brightness #FFA940/#F18825: everything on this panel is black text/icons,
-          // not white, so nothing here needs darkening to clear 4.5:1 — black on either
-          // stop is 8:1+.
+          // Full-brightness #FFA940/#F18825: everything on this panel is #2B1400 (warm
+          // espresso) text/icons, not white, so nothing here needs darkening to clear
+          // 4.5:1 — espresso clears 6.9:1+ on either stop.
           background: 'linear-gradient(135deg, #FFA940, #F18825)',
           borderRadius: '20px',
           padding: '60px 40px',
@@ -157,7 +157,7 @@ const Hero = () => {
               style={{
                 fontSize: isMobile ? '3rem' : '4rem',
                 marginBottom: '1rem',
-                color: '#000',
+                color: '#2B1400',
                 fontWeight: '700',
                 fontFamily:
                   'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", sans-serif',
@@ -170,7 +170,7 @@ const Hero = () => {
               style={{
                 fontSize: isMobile ? '1.6rem' : '2rem',
                 marginBottom: '2rem',
-                color: '#000',
+                color: '#2B1400',
                 fontWeight: '500',
                 fontFamily:
                   'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", sans-serif',
@@ -191,7 +191,7 @@ const Hero = () => {
                 style={{
                   padding: '0.5rem 1rem',
                   background: '#fff',
-                  color: '#000',
+                  color: '#2B1400',
                   textDecoration: 'none',
                   borderRadius: '50px',
                   fontWeight: '600',
@@ -228,7 +228,7 @@ const Hero = () => {
                       backgroundColor: '#F18825',
                       fontSize: '18px',
                       fontWeight: 'bold',
-                      color: '#000',
+                      color: '#2B1400',
                     }}
                   >
                     →
@@ -262,7 +262,7 @@ const Hero = () => {
                 style={{
                   padding: isMobile ? '0.8rem 1.5rem' : '1rem 2rem',
                   background: 'transparent',
-                  color: '#000',
+                  color: '#2B1400',
                   textDecoration: 'none',
                   borderRadius: '50px',
                   fontWeight: '600',
@@ -278,19 +278,19 @@ const Hero = () => {
                 }}
                 onMouseDown={(e) => {
                   e.currentTarget.style.background = 'transparent';
-                  e.currentTarget.style.color = '#fff';
+                  e.currentTarget.style.color = '#2B1400';
                 }}
                 onMouseUp={(e) => {
                   e.currentTarget.style.background = 'transparent';
-                  e.currentTarget.style.color = '#fff';
+                  e.currentTarget.style.color = '#2B1400';
                 }}
                 onFocus={(e) => {
                   e.currentTarget.style.background = 'transparent';
-                  e.currentTarget.style.color = '#fff';
+                  e.currentTarget.style.color = '#2B1400';
                 }}
                 onBlur={(e) => {
                   e.currentTarget.style.background = 'transparent';
-                  e.currentTarget.style.color = '#fff';
+                  e.currentTarget.style.color = '#2B1400';
                 }}
               >
                 Wat wij doen

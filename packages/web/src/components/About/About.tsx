@@ -101,7 +101,7 @@ const About = () => {
                     flexShrink: 0,
                   }}
                 >
-                  <span style={{ color: '#000', fontSize: '14px', fontWeight: 'bold' }}>✓</span>
+                  <span style={{ color: '#2B1400', fontSize: '14px', fontWeight: 'bold' }}>✓</span>
                 </div>
 
                 <h3 style={{ fontSize: '1.5rem', margin: '0', color: '#000' }}>Wat is Qalor?</h3>
@@ -148,7 +148,7 @@ const About = () => {
                     flexShrink: 0,
                   }}
                 >
-                  <span style={{ color: '#000', fontSize: '14px', fontWeight: 'bold' }}>✓</span>
+                  <span style={{ color: '#2B1400', fontSize: '14px', fontWeight: 'bold' }}>✓</span>
                 </div>
 
                 <h3 style={{ fontSize: '1.5rem', margin: '0', color: '#000' }}>
@@ -193,7 +193,7 @@ const About = () => {
                     flexShrink: 0,
                   }}
                 >
-                  <span style={{ color: '#000', fontSize: '14px', fontWeight: 'bold' }}>✓</span>
+                  <span style={{ color: '#2B1400', fontSize: '14px', fontWeight: 'bold' }}>✓</span>
                 </div>
 
                 <h3 style={{ fontSize: '1.5rem', margin: '0', color: '#000' }}>Ervaring</h3>
