@@ -34,7 +34,7 @@ const numberBadgeStyle = (
   height: compact ? '60px' : '80px',
   borderRadius: '50%',
   background: gradient,
-  color: '#fff',
+  color: '#2B1400',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
@@ -64,7 +64,8 @@ const STEPS: Step[] = [
     image: nettekeningImg,
     alt: 'AutoCAD Nettekening',
     // All three steps share one gradient (the previous per-step variants were also part
-    // of the inconsistent-orange problem). #F18825 matches the logo exactly.
+    // of the inconsistent-orange problem). Full brightness: the digits are #2B1400 (warm
+    // espresso), not white, so nothing here needs darkening for contrast.
     gradient: 'linear-gradient(135deg, #FFA940, #F18825)',
     shadow: '0 4px 15px rgba(241,136,37,0.3)',
   },
@@ -149,7 +150,7 @@ const WorkProcess = () => {
           <div
             style={{
               fontSize: '1.6rem',
-              color: '#F18825',
+              color: '#E5770F',
               marginBottom: '0.5rem',
               fontWeight: '400',
               fontFamily:

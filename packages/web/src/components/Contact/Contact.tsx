@@ -195,7 +195,7 @@ const Contact = () => {
           <div
             style={{
               fontSize: '1.6rem',
-              color: '#fff',
+              color: '#2B1400',
               marginBottom: '0.5rem',
               fontWeight: '400',
               fontFamily:
@@ -208,7 +208,7 @@ const Contact = () => {
             style={{
               fontSize: useMobileLayout ? '2rem' : '2.5rem',
               margin: '0',
-              color: '#fff',
+              color: '#2B1400',
               fontWeight: '600',
               fontFamily:
                 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", sans-serif',
@@ -265,13 +265,13 @@ const Contact = () => {
                         width: '100%',
                         boxSizing: 'border-box',
                         background: 'rgba(204,51,17,0.3)',
-                        color: '#fff',
+                        color: '#2B1400',
                       }}
                     />
                     {errors.name && (
                       <div
                         style={{
-                          color: '#fff',
+                          color: '#2B1400',
                           fontSize: '0.85rem',
                           marginTop: '0.25rem',
                           marginLeft: '1rem',
@@ -299,13 +299,13 @@ const Contact = () => {
                         width: '100%',
                         boxSizing: 'border-box',
                         background: 'rgba(204,51,17,0.3)',
-                        color: '#fff',
+                        color: '#2B1400',
                       }}
                     />
                     {errors.email && (
                       <div
                         style={{
-                          color: '#fff',
+                          color: '#2B1400',
                           fontSize: '0.85rem',
                           marginTop: '0.25rem',
                           marginLeft: '1rem',
@@ -336,7 +336,7 @@ const Contact = () => {
                     width: '100%',
                     boxSizing: 'border-box',
                     background: 'rgba(204,51,17,0.3)',
-                    color: '#fff',
+                    color: '#2B1400',
                     fontFamily:
                       'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", sans-serif',
                   }}
@@ -344,7 +344,7 @@ const Contact = () => {
                 {errors.message && (
                   <div
                     style={{
-                      color: '#fff',
+                      color: '#2B1400',
                       fontSize: '0.85rem',
                       marginTop: '0.25rem',
                       marginLeft: '1rem',
@@ -361,7 +361,7 @@ const Contact = () => {
                 className="contact-submit-btn"
                 style={{
                   padding: '0.5rem 1rem',
-                  color: '#fff',
+                  color: '#2B1400',
                   borderRadius: '25px',
                   fontSize: useMobileLayout ? '0.9rem' : '1rem',
                   fontWeight: 'bold',
@@ -388,7 +388,7 @@ const Contact = () => {
                       backgroundColor: '#fff',
                       fontSize: '24px',
                       fontWeight: 'bold',
-                      color: '#F18825',
+                      color: '#E5770F',
                     }}
                   >
                     →

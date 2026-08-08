@@ -35,7 +35,9 @@ const About = () => {
           <div
             style={{
               fontSize: '1.6rem',
-              color: '#F18825',
+              // #DF730E, not the #E5770F used elsewhere: this label sits on the section's
+              // #f8f9fa background, not white, and #E5770F falls just short of 3:1 there.
+              color: '#DF730E',
               marginBottom: '0.5rem',
               fontWeight: '400',
               fontFamily:
@@ -99,7 +101,7 @@ const About = () => {
                     flexShrink: 0,
                   }}
                 >
-                  <span style={{ color: '#fff', fontSize: '14px', fontWeight: 'bold' }}>✓</span>
+                  <span style={{ color: '#2B1400', fontSize: '14px', fontWeight: 'bold' }}>✓</span>
                 </div>
 
                 <h3 style={{ fontSize: '1.5rem', margin: '0', color: '#000' }}>Wat is Qalor?</h3>
@@ -146,7 +148,7 @@ const About = () => {
                     flexShrink: 0,
                   }}
                 >
-                  <span style={{ color: '#fff', fontSize: '14px', fontWeight: 'bold' }}>✓</span>
+                  <span style={{ color: '#2B1400', fontSize: '14px', fontWeight: 'bold' }}>✓</span>
                 </div>
 
                 <h3 style={{ fontSize: '1.5rem', margin: '0', color: '#000' }}>
@@ -191,7 +193,7 @@ const About = () => {
                     flexShrink: 0,
                   }}
                 >
-                  <span style={{ color: '#fff', fontSize: '14px', fontWeight: 'bold' }}>✓</span>
+                  <span style={{ color: '#2B1400', fontSize: '14px', fontWeight: 'bold' }}>✓</span>
                 </div>
 
                 <h3 style={{ fontSize: '1.5rem', margin: '0', color: '#000' }}>Ervaring</h3>

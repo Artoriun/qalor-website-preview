@@ -181,12 +181,11 @@ const Navbar = () => {
           onClick={() => smoothScrollTo('footer')}
           className="navbar-desktop-contact"
           style={{
-            // Matches the Qalor logo's own orange exactly (sampled directly from the
-            // PNG) — not the AA-compliant darker shade used earlier; this is deliberately
-            // below 4.5:1 contrast against white per explicit direction to prioritize
-            // matching the brand color over the WCAG AA gate for now.
+            // Full-brightness #F18825, not a darkened shade: #2B1400 (warm espresso) text on
+            // it clears 6.89:1 (well past the 4.5:1 floor), so there's no need to darken the
+            // fill itself — only white-on-orange needed that.
             background: '#F18825',
-            color: '#fff',
+            color: '#2B1400',
             border: 'none',
             cursor: 'pointer',
             borderRadius: '50px',
@@ -222,7 +221,7 @@ const Navbar = () => {
                 backgroundColor: '#fff',
                 fontSize: '16px',
                 fontWeight: 'bold',
-                color: '#F18825',
+                color: '#2B1400',
                 pointerEvents: 'none', // Prevent hover effects on arrow
               }}
             >

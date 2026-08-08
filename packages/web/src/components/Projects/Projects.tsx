@@ -176,7 +176,9 @@ const Projects = () => {
           <div
             style={{
               fontSize: '1.6rem',
-              color: '#F18825',
+              // #DF730E, not the #E5770F used elsewhere: this label sits on the section's
+              // #f8f9fa background, not white, and #E5770F falls just short of 3:1 there.
+              color: '#DF730E',
               marginBottom: '0.5rem',
               fontWeight: '400',
             }}
@@ -327,7 +329,7 @@ const Projects = () => {
               borderRadius: '50%',
               border: '2px solid #F18825',
               backgroundColor: '#F18825',
-              color: '#fff',
+              color: '#2B1400',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
@@ -351,7 +353,7 @@ const Projects = () => {
               borderRadius: '50%',
               border: '2px solid #F18825',
               backgroundColor: '#F18825',
-              color: '#fff',
+              color: '#2B1400',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',

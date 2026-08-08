@@ -294,7 +294,7 @@ const Team = () => {
             <div
               style={{
                 fontSize: '1.6rem',
-                color: '#F18825',
+                color: '#E5770F',
                 marginBottom: '0.5rem',
                 fontWeight: '400',
                 fontFamily:
@@ -489,7 +489,7 @@ const Team = () => {
                                     backgroundColor: '#F18825',
                                     fontSize: '13px',
                                     fontWeight: 'bold',
-                                    color: '#fff',
+                                    color: '#2B1400',
                                     marginLeft: '4px',
                                   }}
                                 >
@@ -525,7 +525,7 @@ const Team = () => {
                 borderRadius: '50%',
                 border: '2px solid #F18825',
                 backgroundColor: '#F18825',
-                color: '#fff',
+                color: '#2B1400',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
@@ -549,7 +549,7 @@ const Team = () => {
                 borderRadius: '50%',
                 border: '2px solid #F18825',
                 backgroundColor: '#F18825',
-                color: '#fff',
+                color: '#2B1400',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
