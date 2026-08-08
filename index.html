@@ -2,6 +2,23 @@
 <html lang="nl">
   <head>
     <meta charset="UTF-8" />
+    <!-- Sets data-theme on <html> before anything paints, so there's no flash of the
+         wrong theme and nothing for React to disagree with on first render (it never
+         manages this attribute itself — see ThemeContext.tsx). Deliberately a plain,
+         blocking script tag, not type="module": those defer until after parsing, which
+         would be too late — the whole point is running before first paint.
+
+         Light is the standard first-visit theme, not the OS's prefers-color-scheme: a
+         first-time visitor always gets light regardless of their system setting: only an
+         explicit toggle (persisted below) switches it to dark. -->
+    <script>
+      (() => {
+        try {
+          const stored = localStorage.getItem('theme');
+          document.documentElement.dataset.theme = stored === 'dark' ? 'dark' : 'light';
+        } catch (_e) {}
+      })();
+    </script>
     <!-- Every content image is Cloudinary-hosted, including the Hero photo (the LCP
          candidate) — this starts the cross-origin DNS/TLS handshake immediately instead
          of after React has rendered the <img> tag that would otherwise trigger it. -->
@@ -13,8 +30,8 @@
       content="Qalor — energiedeskundigen voor warmtenetten: advies, ontwerp en realisatie van energie-efficiënte warmteoplossingen voor gebouwen en wijken."
     />
     <title>Qalor</title>
-    <script type="module" crossorigin src="/qalor-website-preview/assets/index-Bnfeily9.js"></script>
-    <link rel="stylesheet" crossorigin href="/qalor-website-preview/assets/index-F_2pOpSD.css">
+    <script type="module" crossorigin src="/qalor-website-preview/assets/index-Cas60tc8.js"></script>
+    <link rel="stylesheet" crossorigin href="/qalor-website-preview/assets/index-BFhTXV1A.css">
   </head>
   <body>
     <div id="root"></div>
