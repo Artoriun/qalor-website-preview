@@ -62,10 +62,11 @@ const Navbar = () => {
   // Reused on /admin now (see Admin.tsx) as well as the marketing page, where these
   // section ids don't exist — a plain scrollIntoView there would silently do nothing.
   // Off the homepage, navigate there with the anchor instead of pretending the click
-  // worked.
+  // worked. Compared against BASE_URL, not a hardcoded '/': production serves the
+  // homepage at '/', but the GitHub Pages preview serves it at '/qalor-website-preview/'.
   const smoothScrollTo = (elementId: string) => {
-    if (window.location.pathname !== '/') {
-      window.location.href = `/#${elementId}`;
+    if (window.location.pathname !== import.meta.env.BASE_URL) {
+      window.location.href = `${import.meta.env.BASE_URL}#${elementId}`;
       return;
     }
     const element = document.getElementById(elementId);
@@ -134,8 +135,8 @@ const Navbar = () => {
                 e.currentTarget.style.transform = 'scale(1)';
               }, 150);
 
-              if (window.location.pathname !== '/') {
-                window.location.href = '/';
+              if (window.location.pathname !== import.meta.env.BASE_URL) {
+                window.location.href = import.meta.env.BASE_URL;
                 return;
               }
               window.scrollTo({ top: 0, behavior: 'smooth' });

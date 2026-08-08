@@ -18,7 +18,12 @@ import { ThemeProvider } from './context/ThemeContext';
 // router-dom was dead weight and got dropped in the TS port — nothing else ever needed
 // routes), so this checks the path directly instead of pulling one back in for one route.
 const Admin = lazy(() => import('./pages/Admin'));
-const IS_ADMIN_ROUTE = typeof window !== 'undefined' && window.location.pathname === '/admin';
+// BASE_URL-relative, not a hardcoded '/admin': production serves this from the domain
+// root ('/admin'), but the GitHub Pages preview serves it from a project subpath
+// ('/qalor-website-preview/admin') — see Navbar.tsx's smoothScrollTo for the same
+// reasoning applied to its own navigation targets.
+const ADMIN_PATH = `${import.meta.env.BASE_URL}admin`;
+const IS_ADMIN_ROUTE = typeof window !== 'undefined' && window.location.pathname === ADMIN_PATH;
 
 // Nothing code-split anymore at this level. Team used to be — it pulled in
 // @react-pdf-viewer/core (117KB gzipped) — but that dependency is only actually needed
