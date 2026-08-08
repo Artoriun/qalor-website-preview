@@ -14,11 +14,13 @@
     "format": "biome format --write .",
     "check": "biome check .",
     "preview": "npm run preview --workspace=packages/web",
+    "test:api": "node --import tsx --test \"packages/api/src/**/*.test.ts\"",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "prerender": "node scripts/prerender.mjs",
     "check:budgets": "node scripts/check-budgets.mjs",
-    "check:lighthouse": "node scripts/check-lighthouse.mjs"
+    "check:lighthouse": "node scripts/check-lighthouse.mjs",
+    "hash-password": "node scripts/hash-password.mjs"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.12.1",

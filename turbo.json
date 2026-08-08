@@ -3,11 +3,13 @@
   "tasks": {
     "dev": {
       "cache": false,
-      "persistent": true
+      "persistent": true,
+      "env": ["API_PORT", "VITE_API_URL"]
     },
     "build": {
       "dependsOn": ["^build"],
-      "outputs": ["dist/**"]
+      "outputs": ["dist/**"],
+      "env": ["VITE_API_URL"]
     },
     "typecheck": {}
   },

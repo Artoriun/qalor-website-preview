@@ -15,6 +15,12 @@ export default defineConfig({
       '.ngrok.io', // Allow ngrok domains for future use
       '.trycloudflare.com', // Allow Cloudflare quick tunnels
     ],
+    // Local dev only — VITE_API_URL is what production reads instead (see lib/api.ts).
+    // Proxying avoids CORS entirely for `npm run dev`, and keeps the API's own port out of
+    // sight, matching how the built site only ever talks to one origin.
+    proxy: {
+      '/api': { target: `http://localhost:${process.env.API_PORT ?? 4000}`, changeOrigin: true },
+    },
   },
   // `vite preview` (production build) has its own separate allowlist from `vite dev`.
   preview: {
