@@ -27,7 +27,7 @@
   transform: translateX(-50%);
   width: 6px;
   height: 6px;
-  background-color: #f18825;
+  background-color: #e5770f;
   border-radius: 50%;
   opacity: 0;
   transition:
@@ -85,7 +85,7 @@
 .navbar-hamburger-line {
   width: 20px;
   height: 2px;
-  background: #f18825;
+  background: #e5770f;
   border-radius: 1px;
 }
 
@@ -116,7 +116,8 @@
 .navbar-mobile-menu-item.contact {
   border-bottom: none;
   font-weight: bold;
-  color: #f18825;
+  /* Real body-size text, needs the 4.5:1 floor, not the 3:1 large-text one. */
+  color: #b75f0c;
 }
 
 /* Mobile styles */

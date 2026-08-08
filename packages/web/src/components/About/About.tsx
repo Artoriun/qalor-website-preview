@@ -35,7 +35,9 @@ const About = () => {
           <div
             style={{
               fontSize: '1.6rem',
-              color: '#F18825',
+              // #DF730E, not the #E5770F used elsewhere: this label sits on the section's
+              // #f8f9fa background, not white, and #E5770F falls just short of 3:1 there.
+              color: '#DF730E',
               marginBottom: '0.5rem',
               fontWeight: '400',
               fontFamily:
@@ -92,7 +94,7 @@ const About = () => {
                     width: '24px',
                     height: '24px',
                     borderRadius: '50%',
-                    background: '#F18825',
+                    background: '#B75F0C',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -139,7 +141,7 @@ const About = () => {
                     width: '24px',
                     height: '24px',
                     borderRadius: '50%',
-                    background: '#F18825',
+                    background: '#B75F0C',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -184,7 +186,7 @@ const About = () => {
                     width: '24px',
                     height: '24px',
                     borderRadius: '50%',
-                    background: '#F18825',
+                    background: '#B75F0C',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',

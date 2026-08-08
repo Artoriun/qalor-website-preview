@@ -50,7 +50,9 @@ const Footer = () => {
       data-aos="fade-in"
       style={{
         padding: isMobile ? '2rem 1rem' : '2rem 20px',
-        background: 'linear-gradient(135deg, #FFA940, #F18825)',
+        // #B75F0C/#733C07: same hue as the brand orange, darkened to clear 4.5:1 against
+        // white — this section has real body text (contact details) directly on top.
+        background: 'linear-gradient(135deg, #B75F0C, #733C07)',
         position: 'relative',
         overflow: 'hidden',
       }}

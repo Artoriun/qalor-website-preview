@@ -123,7 +123,10 @@ const Hero = () => {
           maxWidth: '1600px',
           margin: '0 auto',
           width: '100%',
-          background: 'linear-gradient(135deg, #FFA940, #F18825)',
+          // #B75F0C/#733C07: same hue as the brand orange, darkened to clear 4.5:1 against
+          // white — the mobile "Wat wij doen" button label sits directly on this at 16px,
+          // too small to qualify for the 3:1 large-text exception.
+          background: 'linear-gradient(135deg, #B75F0C, #733C07)',
           borderRadius: '20px',
           padding: '60px 40px',
           position: 'relative',
@@ -222,7 +225,7 @@ const Hero = () => {
                       width: '30px',
                       height: '30px',
                       borderRadius: '50%',
-                      backgroundColor: '#F18825',
+                      backgroundColor: '#B75F0C',
                       fontSize: '18px',
                       fontWeight: 'bold',
                       color: '#fff',

@@ -165,7 +165,7 @@ const Contact = () => {
       data-aos="fade-in"
       style={{
         padding: useMobileLayout ? '30px 10px 0px' : '60px 20px 0px',
-        background: 'linear-gradient(135deg, #FFA940, #F18825)',
+        background: 'linear-gradient(135deg, #B75F0C, #733C07)',
         width: '100%',
         position: 'relative',
         overflow: 'hidden',
@@ -388,7 +388,7 @@ const Contact = () => {
                       backgroundColor: '#fff',
                       fontSize: '24px',
                       fontWeight: 'bold',
-                      color: '#F18825',
+                      color: '#E5770F',
                     }}
                   >
                     →

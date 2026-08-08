@@ -86,7 +86,7 @@ const TeamPdfModal = ({ pdfKey, pdfPath, onClose }: TeamPdfModalProps) => {
             position: 'absolute',
             top: '10px',
             right: '10px',
-            background: '#F18825',
+            background: '#E5770F',
             color: 'white',
             border: 'none',
             borderRadius: '50%',
