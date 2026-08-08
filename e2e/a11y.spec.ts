@@ -1,5 +1,30 @@
 import AxeBuilder from '@axe-core/playwright';
-import { expect, test } from '@playwright/test';
+import { expect, type Page, test } from '@playwright/test';
+
+const AXE_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
+
+async function assertNoViolations(page: Page, include?: string) {
+  const builder = new AxeBuilder({ page }).withTags(AXE_TAGS);
+  if (include) builder.include(include);
+  const { violations } = await builder.analyze();
+  // Named rather than counted, so a failure says what broke and where instead of
+  // "expected 0, got 1".
+  expect(
+    violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(', ')}`),
+  ).toEqual([]);
+}
+
+// Flips the header's ThemeToggle switch rather than pre-seeding localStorage: this is the
+// same path a real visitor uses, so it also exercises the toggle's own contrast/aria-pressed
+// state as part of every dark-mode sweep, not just the token swap underneath it.
+async function switchToDarkMode(page: Page) {
+  await page.getByRole('button', { name: 'Schakel naar donkere modus' }).click();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  // body's background-color/color transition over 0.2s (see index.css) — without this,
+  // axe can sample mid-fade, where a color briefly sits between its light and dark values
+  // and reads as lower contrast than either settled state actually is.
+  await page.waitForTimeout(250);
+}
 
 /**
  * Accessibility, checked in the browser rather than only in the Lighthouse run —
@@ -12,16 +37,14 @@ test('the home page has no accessibility violations', async ({ page }) => {
   // Give the below-the-fold lazy sections (Team/About/WorkProcess/Projects/Footer) time
   // to resolve and mount before the sweep, so the audit covers the whole page.
   await page.waitForSelector('#footer');
+  await assertNoViolations(page);
+});
 
-  const { violations } = await new AxeBuilder({ page })
-    .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
-    .analyze();
-
-  // Named rather than counted, so a failure says what broke and where instead of
-  // "expected 0, got 1".
-  expect(
-    violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(', ')}`),
-  ).toEqual([]);
+test('the home page has no accessibility violations in dark mode', async ({ page }) => {
+  await page.goto('/');
+  await page.waitForSelector('#footer');
+  await switchToDarkMode(page);
+  await assertNoViolations(page);
 });
 
 test('the mobile dropdown menu has no accessibility violations', async ({ page }) => {
@@ -37,12 +60,22 @@ test('the mobile dropdown menu has no accessibility violations', async ({ page }
   // because the menu only exists in the DOM once opened, so the sweep above — which
   // never opens it — structurally cannot see anything inside it. A real violation lived
   // here (the "Contact" link's color) undetected until this was added.
-  const { violations } = await new AxeBuilder({ page })
-    .include('.navbar-mobile-menu')
-    .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
-    .analyze();
+  await assertNoViolations(page, '.navbar-mobile-menu');
+});
 
-  expect(
-    violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(', ')}`),
-  ).toEqual([]);
+// The admin API isn't part of this suite's webServer (see playwright.config.ts), so
+// there's no session to log in with here — this covers the sign-in screen itself, which is
+// still real coverage: it's the one admin screen every visitor who finds /admin actually
+// reaches, using the same reused <Navbar/> header as the rest of the portal.
+test('the admin sign-in screen has no accessibility violations', async ({ page }) => {
+  await page.goto('/admin');
+  await page.waitForSelector('#password');
+  await assertNoViolations(page);
+});
+
+test('the admin sign-in screen has no accessibility violations in dark mode', async ({ page }) => {
+  await page.goto('/admin');
+  await page.waitForSelector('#password');
+  await switchToDarkMode(page);
+  await assertNoViolations(page);
 });

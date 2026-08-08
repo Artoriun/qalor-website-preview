@@ -1,6 +1,7 @@
 import { type CSSProperties, useEffect, useRef, useState } from 'react';
 import qalorLogo from '../../assets/images/figures/qalor logo.png';
 import './Navbar.css';
+import ThemeToggle from './ThemeToggle';
 
 const navbarStyle: CSSProperties = {
   position: 'fixed',
@@ -8,7 +9,7 @@ const navbarStyle: CSSProperties = {
   left: 0,
   right: 0,
   zIndex: 1000,
-  background: '#fff',
+  background: 'var(--bg-page)',
   boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
   padding: '0.5rem 0',
 };
@@ -26,7 +27,7 @@ const navbarInnerStyle: CSSProperties = {
 const navButtonStyle: CSSProperties = {
   background: 'none',
   border: 'none',
-  color: 'inherit',
+  color: 'var(--text-heading)',
   cursor: 'pointer',
   fontSize: 'inherit',
   fontFamily: 'inherit',
@@ -58,7 +59,15 @@ const Navbar = () => {
     };
   }, [isMenuOpen]);
 
+  // Reused on /admin now (see Admin.tsx) as well as the marketing page, where these
+  // section ids don't exist — a plain scrollIntoView there would silently do nothing.
+  // Off the homepage, navigate there with the anchor instead of pretending the click
+  // worked.
   const smoothScrollTo = (elementId: string) => {
+    if (window.location.pathname !== '/') {
+      window.location.href = `/#${elementId}`;
+      return;
+    }
     const element = document.getElementById(elementId);
     if (element) {
       element.scrollIntoView({
@@ -125,6 +134,10 @@ const Navbar = () => {
                 e.currentTarget.style.transform = 'scale(1)';
               }, 150);
 
+              if (window.location.pathname !== '/') {
+                window.location.href = '/';
+                return;
+              }
               window.scrollTo({ top: 0, behavior: 'smooth' });
               setIsMenuOpen(false);
             }}
@@ -175,120 +188,126 @@ const Navbar = () => {
           </li>
         </ul>
 
-        {/* Desktop Contact button */}
-        <button
-          type="button"
-          onClick={() => smoothScrollTo('footer')}
-          className="navbar-desktop-contact"
-          style={{
-            // Full-brightness #F18825, not a darkened shade: #2B1400 (warm espresso) text on
-            // it clears 6.89:1 (well past the 4.5:1 floor), so there's no need to darken the
-            // fill itself — only white-on-orange needed that.
-            background: '#F18825',
-            color: '#2B1400',
-            border: 'none',
-            cursor: 'pointer',
-            borderRadius: '50px',
-            padding: '0.5rem 1rem',
-            fontWeight: '600',
-            transition: 'all 0.3s ease',
-            outline: 'none',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = '#D9720C';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = '#F18825';
-          }}
-        >
-          <span
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              pointerEvents: 'none', // Prevent hover effects on text and arrow
-            }}
-          >
-            <span style={{ pointerEvents: 'none' }}>Contact</span>
-            <span
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: '24px',
-                height: '24px',
-                borderRadius: '50%',
-                backgroundColor: '#fff',
-                fontSize: '16px',
-                fontWeight: 'bold',
-                color: '#2B1400',
-                pointerEvents: 'none', // Prevent hover effects on arrow
-              }}
-            >
-              →
-            </span>
-          </span>
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <ThemeToggle />
 
-        {/* Mobile Hamburger Menu */}
-        <div ref={menuRef} style={{ position: 'relative' }}>
+          {/* Desktop Contact button */}
           <button
             type="button"
-            onClick={toggleMenu}
-            className="navbar-hamburger"
-            aria-label="Menu"
-            aria-expanded={isMenuOpen}
+            onClick={() => smoothScrollTo('footer')}
+            className="navbar-desktop-contact"
+            style={{
+              // Full-brightness #F18825, not a darkened shade: #2B1400 (warm espresso) text
+              // on it clears 6.89:1 (well past the 4.5:1 floor), so there's no need to
+              // darken the fill itself — only white-on-orange needed that. Same reason this
+              // isn't redefined for dark mode: the pairing's contrast never depended on the
+              // page background.
+              background: 'var(--accent)',
+              color: 'var(--accent-on-fill)',
+              border: 'none',
+              cursor: 'pointer',
+              borderRadius: '50px',
+              padding: '0.5rem 1rem',
+              fontWeight: '600',
+              transition: 'all 0.3s ease',
+              outline: 'none',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'var(--accent-hover)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'var(--accent)';
+            }}
           >
-            <div className="navbar-hamburger-line" />
-            <div className="navbar-hamburger-line" />
-            <div className="navbar-hamburger-line" />
+            <span
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                pointerEvents: 'none', // Prevent hover effects on text and arrow
+              }}
+            >
+              <span style={{ pointerEvents: 'none' }}>Contact</span>
+              <span
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: '24px',
+                  height: '24px',
+                  borderRadius: '50%',
+                  backgroundColor: '#fff',
+                  fontSize: '16px',
+                  fontWeight: 'bold',
+                  color: 'var(--accent-on-fill)',
+                  pointerEvents: 'none', // Prevent hover effects on arrow
+                }}
+              >
+                →
+              </span>
+            </span>
           </button>
 
-          {/* Mobile Dropdown Menu */}
-          {isMenuOpen && (
-            <div className="navbar-mobile-menu">
-              <button
-                type="button"
-                onClick={() => smoothScrollTo('team')}
-                className="navbar-mobile-menu-item"
-                style={{ background: 'none', border: 'none', width: '100%', textAlign: 'left' }}
-              >
-                Ons team
-              </button>
-              <button
-                type="button"
-                onClick={() => smoothScrollTo('qalor')}
-                className="navbar-mobile-menu-item"
-                style={{ background: 'none', border: 'none', width: '100%', textAlign: 'left' }}
-              >
-                Qalor
-              </button>
-              <button
-                type="button"
-                onClick={() => smoothScrollTo('how-it-works')}
-                className="navbar-mobile-menu-item"
-                style={{ background: 'none', border: 'none', width: '100%', textAlign: 'left' }}
-              >
-                Ons werkproces
-              </button>
-              <button
-                type="button"
-                onClick={() => smoothScrollTo('projects')}
-                className="navbar-mobile-menu-item"
-                style={{ background: 'none', border: 'none', width: '100%', textAlign: 'left' }}
-              >
-                Projecten
-              </button>
-              <button
-                type="button"
-                onClick={() => smoothScrollTo('footer')}
-                className="navbar-mobile-menu-item contact"
-                style={{ background: 'none', border: 'none', width: '100%', textAlign: 'left' }}
-              >
-                Contact
-              </button>
-            </div>
-          )}
+          {/* Mobile Hamburger Menu */}
+          <div ref={menuRef} style={{ position: 'relative' }}>
+            <button
+              type="button"
+              onClick={toggleMenu}
+              className="navbar-hamburger"
+              aria-label="Menu"
+              aria-expanded={isMenuOpen}
+            >
+              <div className="navbar-hamburger-line" />
+              <div className="navbar-hamburger-line" />
+              <div className="navbar-hamburger-line" />
+            </button>
+
+            {/* Mobile Dropdown Menu */}
+            {isMenuOpen && (
+              <div className="navbar-mobile-menu">
+                <button
+                  type="button"
+                  onClick={() => smoothScrollTo('team')}
+                  className="navbar-mobile-menu-item"
+                  style={{ background: 'none', border: 'none', width: '100%', textAlign: 'left' }}
+                >
+                  Ons team
+                </button>
+                <button
+                  type="button"
+                  onClick={() => smoothScrollTo('qalor')}
+                  className="navbar-mobile-menu-item"
+                  style={{ background: 'none', border: 'none', width: '100%', textAlign: 'left' }}
+                >
+                  Qalor
+                </button>
+                <button
+                  type="button"
+                  onClick={() => smoothScrollTo('how-it-works')}
+                  className="navbar-mobile-menu-item"
+                  style={{ background: 'none', border: 'none', width: '100%', textAlign: 'left' }}
+                >
+                  Ons werkproces
+                </button>
+                <button
+                  type="button"
+                  onClick={() => smoothScrollTo('projects')}
+                  className="navbar-mobile-menu-item"
+                  style={{ background: 'none', border: 'none', width: '100%', textAlign: 'left' }}
+                >
+                  Projecten
+                </button>
+                <button
+                  type="button"
+                  onClick={() => smoothScrollTo('footer')}
+                  className="navbar-mobile-menu-item contact"
+                  style={{ background: 'none', border: 'none', width: '100%', textAlign: 'left' }}
+                >
+                  Contact
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </nav>

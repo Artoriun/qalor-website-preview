@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react';
+import { useContent } from '../../context/ContentContext';
 import { fullBleedSrcSet, optimizeUrl } from '../../lib/images';
 import Particles from '../Particles/Particles';
 import './Hero.css';
-
-const heroImage = 'https://res.cloudinary.com/o5hr8kjc/image/upload/qalor/hero.jpg';
 
 const smoothScrollTo = (elementId: string) => {
   const element = document.getElementById(elementId);
@@ -33,6 +32,9 @@ const smoothScrollTo = (elementId: string) => {
 };
 
 const Hero = () => {
+  const { content } = useContent();
+  const { headline, subheadline, image: heroImage } = content.hero;
+
   // Lazy initializer, not a plain `false`: this section is prerendered at a desktop
   // viewport (see scripts/prerender.mjs), so a mobile visitor hydrating with `useState(false)`
   // painted the desktop layout first and only snapped to the mobile one once the effect
@@ -164,7 +166,7 @@ const Hero = () => {
                 lineHeight: '1.2',
               }}
             >
-              Welkom op de website van Qalor
+              {headline}
             </h1>
             <h2
               style={{
@@ -176,7 +178,7 @@ const Hero = () => {
                   'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", sans-serif',
               }}
             >
-              Energiedeskundigen warmtenetten
+              {subheadline}
             </h2>
             <div
               style={{

@@ -1,10 +1,13 @@
-import { PROJECTS } from '@qalor/shared';
 import { useEffect, useRef, useState } from 'react';
+import { useContent } from '../../context/ContentContext';
 import { optimizeUrl } from '../../lib/images';
 
 const AUTOPLAY_MS = 5000;
 
 const Projects = () => {
+  const { content } = useContent();
+  const { eyebrow, heading } = content.projectsIntro;
+  const PROJECTS = content.projects;
   const timerRef = useRef<ReturnType<typeof setInterval>>(undefined);
   const [prevClicked, setPrevClicked] = useState(false);
   const [nextClicked, setNextClicked] = useState(false);
@@ -169,26 +172,31 @@ const Projects = () => {
     <section
       id="projects"
       data-aos="fade-right"
-      style={{ padding: '80px 20px', backgroundColor: '#f8f9fa', width: '100%' }}
+      style={{ padding: '80px 20px', backgroundColor: 'var(--bg-section)', width: '100%' }}
     >
       <div style={{ maxWidth: '1400px', margin: '0 auto', textAlign: 'center' }}>
         <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
           <div
             style={{
               fontSize: '1.6rem',
-              // #DF730E, not the #E5770F used elsewhere: this label sits on the section's
-              // #f8f9fa background, not white, and #E5770F falls just short of 3:1 there.
-              color: '#DF730E',
+              // Section-background tier, not the stronger one: this label sits on
+              // --bg-section, not white, and the stronger tier falls just short of 3:1 there.
+              color: 'var(--accent-text-strong-section)',
               marginBottom: '0.5rem',
               fontWeight: '400',
             }}
           >
-            • Projectreferenties
+            • {eyebrow}
           </div>
           <h2
-            style={{ fontSize: '2.5rem', margin: '0 0 1rem 0', color: '#333', fontWeight: '600' }}
+            style={{
+              fontSize: '2.5rem',
+              margin: '0 0 1rem 0',
+              color: 'var(--text-heading)',
+              fontWeight: '600',
+            }}
           >
-            Onze projecten in 2024-2025
+            {heading}
           </h2>
         </div>
         <div
@@ -327,9 +335,9 @@ const Projects = () => {
               width: '50px',
               height: '50px',
               borderRadius: '50%',
-              border: '2px solid #F18825',
-              backgroundColor: '#F18825',
-              color: '#2B1400',
+              border: '2px solid var(--accent)',
+              backgroundColor: 'var(--accent)',
+              color: 'var(--accent-on-fill)',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
@@ -351,9 +359,9 @@ const Projects = () => {
               width: '50px',
               height: '50px',
               borderRadius: '50%',
-              border: '2px solid #F18825',
-              backgroundColor: '#F18825',
-              color: '#2B1400',
+              border: '2px solid var(--accent)',
+              backgroundColor: 'var(--accent)',
+              color: 'var(--accent-on-fill)',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',

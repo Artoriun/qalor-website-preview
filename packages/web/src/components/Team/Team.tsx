@@ -1,21 +1,26 @@
-import { TEAM_MEMBERS } from '@qalor/shared';
-import { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import qalorLogoImg from '../../assets/images/figures/qalor logo.png';
+import { useContent } from '../../context/ContentContext';
 import { optimizeUrl } from '../../lib/images';
 
 // See TeamPdfModal.tsx's own comment: @react-pdf-viewer/core only loads once someone
 // actually opens a CV, not on every page load.
 const TeamPdfModal = lazy(() => import('./TeamPdfModal'));
 
-const teamMembers = TEAM_MEMBERS.map((m) => ({
-  ...m,
-  backgroundImage: m.isImage ? undefined : m.photoUrl && optimizeUrl(m.photoUrl, 700),
-  imageUrl: m.isImage ? qalorLogoImg : undefined,
-}));
-
 const AUTOPLAY_MS = 3000;
 
 const Team = () => {
+  const { content } = useContent();
+  const { eyebrow, heading } = content.teamIntro;
+  const teamMembers = useMemo(
+    () =>
+      content.team.map((m) => ({
+        ...m,
+        backgroundImage: m.isImage ? undefined : m.photoUrl && optimizeUrl(m.photoUrl, 700),
+        imageUrl: m.isImage ? qalorLogoImg : undefined,
+      })),
+    [content.team],
+  );
   const timerRef = useRef<ReturnType<typeof setInterval>>(undefined);
   const [prevClicked, setPrevClicked] = useState(false);
   const [nextClicked, setNextClicked] = useState(false);
@@ -288,33 +293,35 @@ const Team = () => {
           its settled state) and would have made the Lighthouse accessibility gate
           flaky in CI for the same reason. Already lazy-loaded via Suspense, so it
           doesn't need a second, AOS-driven reveal on top of that. */}
-      <section id="team" style={{ padding: '80px 20px', backgroundColor: '#fff', width: '100%' }}>
+      <section
+        id="team"
+        style={{ padding: '80px 20px', backgroundColor: 'var(--bg-page)', width: '100%' }}
+      >
         <div style={{ maxWidth: '1400px', margin: '0 auto', textAlign: 'center' }}>
           <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
             <div
               style={{
                 fontSize: '1.6rem',
-                color: '#E5770F',
+                color: 'var(--accent-text-strong)',
                 marginBottom: '0.5rem',
                 fontWeight: '400',
                 fontFamily:
                   'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", sans-serif',
               }}
             >
-              • Ons team
+              • {eyebrow}
             </div>
             <h2
               style={{
                 fontSize: '2rem',
                 margin: '0',
-                color: '#333',
+                color: 'var(--text-heading)',
                 fontWeight: '600',
                 fontFamily:
                   'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", sans-serif',
               }}
             >
-              Een gezamenlijke werkervaring van meer dan 130 jaar in de warmte wereld waarvan meer
-              dan 100 jaar bij warmtebedrijven heeft geleid tot een unieke krachtenbundeling.
+              {heading}
             </h2>
           </div>
           <div style={{ position: 'relative' }}>
@@ -368,7 +375,7 @@ const Team = () => {
                           ? 'transparent'
                           : member.backgroundImage
                             ? `url(${member.backgroundImage})`
-                            : '#f8f9fa',
+                            : 'var(--bg-section)',
                         backgroundSize: member.backgroundImage ? 'cover' : 'auto',
                         backgroundPosition: member.backgroundImage ? 'center' : 'initial',
                         padding: '0',
@@ -486,10 +493,10 @@ const Team = () => {
                                     width: '20px',
                                     height: '20px',
                                     borderRadius: '50%',
-                                    backgroundColor: '#F18825',
+                                    backgroundColor: 'var(--accent)',
                                     fontSize: '13px',
                                     fontWeight: 'bold',
-                                    color: '#2B1400',
+                                    color: 'var(--accent-on-fill)',
                                     marginLeft: '4px',
                                   }}
                                 >
@@ -523,9 +530,9 @@ const Team = () => {
                 width: '50px',
                 height: '50px',
                 borderRadius: '50%',
-                border: '2px solid #F18825',
-                backgroundColor: '#F18825',
-                color: '#2B1400',
+                border: '2px solid var(--accent)',
+                backgroundColor: 'var(--accent)',
+                color: 'var(--accent-on-fill)',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
@@ -547,9 +554,9 @@ const Team = () => {
                 width: '50px',
                 height: '50px',
                 borderRadius: '50%',
-                border: '2px solid #F18825',
-                backgroundColor: '#F18825',
-                color: '#2B1400',
+                border: '2px solid var(--accent)',
+                backgroundColor: 'var(--accent)',
+                color: 'var(--accent-on-fill)',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
