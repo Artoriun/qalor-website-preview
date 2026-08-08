@@ -9,17 +9,22 @@
  * the app still boots on top and hydrates over it.
  *
  * Uses Playwright because it's already a dependency for the layout/a11y suite — no SSR
- * runtime, no second framework. Unlike TurboHamstarter (this repo's sibling project),
- * there's no admin-editable content or API to diverge from: everything here is bundled
- * at build time, so there's no __CONTENT__ embedding step, no multi-route/i18n loop, and
- * no GitHub Pages 404.html SPA-fallback to write (there's no client-side router left —
- * react-router-dom was dead weight and got dropped in the TS port).
+ * runtime, no second framework.
+ *
+ * Content comes from the admin API (packages/api) when VITE_API_URL is set, falling back
+ * to the bundled defaults in packages/shared otherwise — same mechanism as the sibling
+ * turbo-portfolio-starter project: a Firestore edit is only ever a diff from the bundle, so
+ * a sleeping free-tier API (or one that was simply never configured) still produces a
+ * correct, non-blank build rather than failing it. Whatever content this run actually used
+ * gets embedded as `window.__CONTENT__` in the output, so the client's first hydration pass
+ * matches exactly what the static HTML shows — a mismatch there (bundle vs. what was
+ * fetched) would trip the hydration gate below just as surely as a real content bug.
  */
 import { spawn } from 'node:child_process';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { chromium } from '@playwright/test';
-import { SITE_DESCRIPTION, SITE_TITLE } from '@qalor/shared';
+import { DEFAULT_SITE_CONTENT, SITE_DESCRIPTION, SITE_TITLE } from '@qalor/shared';
 
 // Where the site will actually live. Used for the canonical link and sitemap.
 const SITE = (process.env.SITE_URL ?? 'https://qalor.nl').replace(/\/$/, '');
@@ -33,6 +38,33 @@ if (!existsSync(join(DIST, 'index.html'))) {
   console.error('✗ no build to prerender — run `npm run build` first');
   process.exit(1);
 }
+
+// ---- load content -------------------------------------------------------------------------
+async function loadContent() {
+  // http→https is coerced for a real host (Render answers http with a 301, and a redirect
+  // would need re-following) but not for localhost — VITE_API_URL=http://localhost:4000 is
+  // exactly how this script gets tested locally, and there's no TLS server listening there
+  // to coerce it to.
+  const raw = process.env.VITE_API_URL ?? '';
+  const api = /^http:\/\/(localhost|127\.0\.0\.1)/.test(raw)
+    ? raw
+    : raw.replace(/^http:\/\//, 'https://');
+  if (!api) {
+    console.warn('! VITE_API_URL not set — prerendering from bundled content');
+    return DEFAULT_SITE_CONTENT;
+  }
+  try {
+    const res = await fetch(`${api}/api/content`, { signal: AbortSignal.timeout(20_000) });
+    if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+    const data = await res.json();
+    if (!data || typeof data !== 'object' || !data.hero) throw new Error('malformed response');
+    return data;
+  } catch (err) {
+    console.warn(`! live API unreachable (${err.message}) — prerendering from bundled content`);
+    return DEFAULT_SITE_CONTENT;
+  }
+}
+const content = await loadContent();
 
 // ---- serve the built app ----------------------------------------------------
 const server = spawn('npx', ['vite', 'preview', '--port', String(PORT), '--strictPort'], {
@@ -58,6 +90,15 @@ for (let i = 0; i < 60; i++) {
 // ---- render -------------------------------------------------------------------
 const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+
+// Set before any app script runs, so ContentContext's initial render already matches what
+// gets captured below — the same content this script embeds into the final HTML further
+// down. Without this the capture would use bundled defaults while the embedded
+// window.__CONTENT__ holds live-API content (or vice versa), and a real visitor's first
+// hydration pass would disagree with one of them.
+await page.addInitScript((data) => {
+  window.__CONTENT__ = data;
+}, content);
 
 await page.goto(origin, { waitUntil: 'networkidle' });
 
@@ -113,16 +154,30 @@ const ogTags = [
  * optimizeUrl()/fullBleedSrcSet() call exactly (packages/web/src/lib/images.ts) — this
  * script can't import that (it's app-internal, not a published package), so the
  * transform is duplicated here; keep both in sync if either changes.
+ *
+ * Reads content.hero.image rather than a hardcoded URL: once the image is admin-editable,
+ * a hardcoded default would silently stop matching whatever Hero.tsx actually renders as
+ * soon as someone changes it in the portal.
  */
-const HERO_IMAGE = 'https://res.cloudinary.com/o5hr8kjc/image/upload/qalor/hero.jpg';
 const heroOptimize = (w) =>
-  HERO_IMAGE.replace('/image/upload/', `/image/upload/q_auto,w_${w}/`).replace(/\.jpg$/, '.webp');
+  content.hero.image
+    .replace('/image/upload/', `/image/upload/q_auto,w_${w}/`)
+    .replace(/\.(jpe?g|png)$/i, '.webp');
 const heroSrcSet = [480, 768, 1024, 1200].map((w) => `${heroOptimize(w)} ${w}w`).join(', ');
 const preloadTag = `<link rel="preload" as="image" href="${esc(heroOptimize(1024))}" imagesrcset="${esc(heroSrcSet)}" imagesizes="(max-width: 768px) 100vw, 50vw" fetchpriority="high" />`;
+// Escapes '<' so a stray "</script>" inside admin-edited text (a body field, say) can't
+// prematurely close this tag — the rest of `template` after it would then render as raw
+// text on the page instead of being part of the document, and depending on what followed,
+// worse.
+const contentJson = JSON.stringify(content).replace(/</g, '\\u003c');
+const contentScript = `<script>window.__CONTENT__=${contentJson}</script>`;
 
 const html = template
   .replace('<html ', '<html data-prerendered ')
-  .replace('</title>', `</title>\n    ${canonicalTag}\n    ${ogTags}\n    ${preloadTag}`)
+  .replace(
+    '</title>',
+    `</title>\n    ${canonicalTag}\n    ${ogTags}\n    ${preloadTag}\n    ${contentScript}`,
+  )
   .replace('<div id="root"></div>', `<div id="root">${root}</div>`);
 
 writeFileSync(join(DIST, 'index.html'), html);

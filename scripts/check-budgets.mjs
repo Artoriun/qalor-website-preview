@@ -61,6 +61,16 @@ for (const file of [...walk(join(WEB, 'src')), ...walk(SHARED)]) {
     const derived = new RegExp(`(?:const\\s+(\\w+)\\s*=|(\\w+):)\\s*\`\\$\\{${base}\\}`, 'g');
     for (const m of text.matchAll(derived)) names.add(m[1] ?? m[2]);
   }
+  // Destructuring-with-rename: `const { image: heroImage } = content.hero` binds the
+  // Cloudinary URL to a name that shares nothing textually with 'image', so a plain
+  // property access (`step.image`, which the \bimage\b test below already catches through
+  // the dot) isn't what's happening here — the local name needs to be tracked in its own
+  // right. Only actually fires for names already known to hold a Cloudinary URL, so this
+  // can't accidentally start tracking an unrelated `image:` object-literal key.
+  for (const known of [...names]) {
+    const renamed = new RegExp(`\\b${known}:\\s*(\\w+)`, 'g');
+    for (const m of text.matchAll(renamed)) names.add(m[1]);
+  }
   text.split('\n').forEach((line, i) => {
     for (const name of names) {
       const re = new RegExp(`\\b${name}\\b`);

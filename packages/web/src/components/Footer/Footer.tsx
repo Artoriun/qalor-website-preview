@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import qalorLogo from '../../assets/images/figures/qalorlogowhite.png';
+import { useContent } from '../../context/ContentContext';
 import Particles from '../Particles/Particles';
 
 const linkStyle: React.CSSProperties = {
@@ -21,6 +22,8 @@ const contactLinkStyle: React.CSSProperties = {
 };
 
 const Footer = () => {
+  const { content } = useContent();
+  const { tagline, email, phone, address, addressUrl, btwNumber, iban, copyright } = content.footer;
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -98,7 +101,7 @@ const Footer = () => {
                   'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", sans-serif',
               }}
             >
-              Energiedeskundigen warmtenetten
+              {tagline}
             </p>
           </div>
 
@@ -165,25 +168,25 @@ const Footer = () => {
               }}
             >
               <p>
-                <a href="mailto:pdk@qalor.nl" style={contactLinkStyle}>
-                  pdk@qalor.nl
+                <a href={`mailto:${email}`} style={contactLinkStyle}>
+                  {email}
                 </a>
               </p>
               <p>
-                <a href="tel:0611216938" style={contactLinkStyle}>
-                  06 112 16 938
+                <a href={`tel:${phone.replace(/\s+/g, '')}`} style={contactLinkStyle}>
+                  {phone}
                 </a>
               </p>
               <p>
-                <a href="https://maps.app.goo.gl/svtgb5ivAYVd9MXAA" style={contactLinkStyle}>
-                  Lange Marktstraat 1, 8911AD, Leeuwarden
+                <a href={addressUrl} style={contactLinkStyle}>
+                  {address}
                 </a>
               </p>
               <p>
-                <strong>Btw-nummer:</strong> NL005077048B43
+                <strong>Btw-nummer:</strong> {btwNumber}
               </p>
               <p>
-                <strong>IBAN:</strong> NL94 ABNA 0134 0861 39
+                <strong>IBAN:</strong> {iban}
               </p>
             </div>
           </div>
@@ -203,7 +206,7 @@ const Footer = () => {
                 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", sans-serif',
             }}
           >
-            Copyright @ 2025 Qalor
+            {copyright}
           </p>
         </div>
       </div>

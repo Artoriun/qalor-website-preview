@@ -1,6 +1,6 @@
 import AOS from 'aos';
 import 'aos/dist/aos.css';
-import { useEffect } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import About from './components/About/About';
 // Contact isn't wired in — see the commented-out <Contact /> below.
 // import Contact from './components/Contact/Contact';
@@ -10,6 +10,15 @@ import Navbar from './components/Navbar/Navbar';
 import Projects from './components/Projects/Projects';
 import Team from './components/Team/Team';
 import WorkProcess from './components/WorkProcess/WorkProcess';
+import { ContentProvider } from './context/ContentContext';
+import { ThemeProvider } from './context/ThemeContext';
+
+// Lazy, not a top-level import: none of the admin portal's code (or its login form) should
+// ship in the bundle a normal visitor downloads. There's no router in this app (react-
+// router-dom was dead weight and got dropped in the TS port — nothing else ever needed
+// routes), so this checks the path directly instead of pulling one back in for one route.
+const Admin = lazy(() => import('./pages/Admin'));
+const IS_ADMIN_ROUTE = typeof window !== 'undefined' && window.location.pathname === '/admin';
 
 // Nothing code-split anymore at this level. Team used to be — it pulled in
 // @react-pdf-viewer/core (117KB gzipped) — but that dependency is only actually needed
@@ -19,7 +28,7 @@ import WorkProcess from './components/WorkProcess/WorkProcess';
 // Suspense-fallback CLS those already had fixed for them (the "Laden..." placeholder is a
 // very different height from the real section that replaces it).
 
-function App() {
+function MarketingSite() {
   useEffect(() => {
     // Scroll position restoration
     const saveScrollPosition = () => {
@@ -93,6 +102,22 @@ function App() {
       {/* <Contact /> */}
       <Footer />
     </div>
+  );
+}
+
+function App() {
+  return (
+    <ThemeProvider>
+      <ContentProvider>
+        {IS_ADMIN_ROUTE ? (
+          <Suspense fallback={null}>
+            <Admin />
+          </Suspense>
+        ) : (
+          <MarketingSite />
+        )}
+      </ContentProvider>
+    </ThemeProvider>
   );
 }
 

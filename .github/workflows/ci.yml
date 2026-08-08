@@ -11,6 +11,13 @@ on:
     branches: ['master']
   pull_request:
   workflow_dispatch:
+  # Content edited in the admin portal is live for a signed-in visitor immediately (see
+  # ContentContext.tsx), but invisible to crawlers/first-paint visitors until the next
+  # prerender build. This bounds that gap to a week without needing a manual redeploy after
+  # every edit. Must stay in the deploy job's `if:` below, or this run builds and tests but
+  # silently skips deploying.
+  schedule:
+    - cron: '0 4 * * 1'
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -35,6 +42,11 @@ jobs:
 
       - name: Typecheck
         run: npm run typecheck
+
+      # Runs against an in-memory store (packages/api/src/testing/memoryStore.ts), not real
+      # Firestore — no credentials needed for this to pass.
+      - name: API tests
+        run: npm run test:api
 
       - name: Build
         run: npm run build
@@ -113,7 +125,7 @@ jobs:
     name: Deploy via FTP
     needs: [verify, e2e]
     # Never from a pull request — a PR build must not publish to production.
-    if: github.ref == 'refs/heads/master' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    if: github.ref == 'refs/heads/master' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule')
     runs-on: ubuntu-latest
     concurrency:
       group: deploy
@@ -152,10 +164,15 @@ jobs:
       - name: Build
         run: npm run build
 
+      # VITE_API_URL is a repo secret (Settings -> Secrets and variables -> Actions ->
+      # Secrets) pointing at the deployed packages/api instance (see ADMIN.md) — unset
+      # until that's provisioned, in which case this falls back to the bundled defaults in
+      # packages/shared with a warning, same as running it locally with no API configured.
       - name: Prerender, sitemap and robots
         run: npm run prerender
         env:
           SITE_URL: https://qalor.nl
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
 
       # server-dir is a repo variable (Settings -> Secrets and variables -> Actions ->
       # Variables), not a secret — it's just a path, e.g. /public_html/. Defaults to the

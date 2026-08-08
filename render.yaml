@@ -1,0 +1,34 @@
+# Deploys packages/api. Provisioning the actual service (connecting this repo, setting the
+# env vars below in the dashboard) is a one-time manual step in Render — this file describes
+# the service once that's done, it doesn't create it on its own.
+#
+# `sync: false` means "required, but set in the Render dashboard, not in git" — every value
+# here is a real secret or a deploy-specific setting. See packages/api/.env.example for what
+# each one does and ADMIN.md for the full setup walkthrough.
+services:
+  - type: web
+    name: qalor-api
+    runtime: node
+    plan: free
+    region: frankfurt
+    buildCommand: npm install && cd packages/api && npm run build
+    startCommand: node packages/api/dist/index.js
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: '22'
+      - key: ADMIN_PASSWORD_HASH
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: CORS_ORIGIN
+        sync: false
+      - key: FIREBASE_PROJECT_ID
+        sync: false
+      - key: FIREBASE_CLIENT_EMAIL
+        sync: false
+      - key: FIREBASE_PRIVATE_KEY
+        sync: false
+      - key: CLOUDINARY_URL
+        sync: false
