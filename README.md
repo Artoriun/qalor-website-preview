@@ -6,7 +6,7 @@ sustainable energy solutions. A **TurboRepo** monorepo: **React**, **TypeScript*
 gates every deploy on lint, typecheck, a Playwright layout/accessibility sweep, a
 Lighthouse audit and a bundle budget — nothing publishes unless all of it passes.
 
-**Live site:** https://qalor.nl/
+**Live preview site:** https://artoriun.github.io/qalor-website-preview/
 
 <img width="1440" alt="Qalor homepage" src=".github/readme-assets/homepage.png" />
 
