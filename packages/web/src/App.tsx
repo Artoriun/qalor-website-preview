@@ -94,12 +94,14 @@ function MarketingSite() {
       }}
     >
       <Navbar />
-      <Hero />
-      <Team />
-      <About />
-      <WorkProcess />
-      <Projects />
-      {/* <Contact /> */}
+      <main>
+        <Hero />
+        <Team />
+        <About />
+        <WorkProcess />
+        <Projects />
+        {/* <Contact /> */}
+      </main>
       <Footer />
     </div>
   );
