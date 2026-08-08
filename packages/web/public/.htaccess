@@ -1,0 +1,7 @@
+# SPA fallback for hosts that don't already have this configured elsewhere in the
+# hosting panel: serves 404.html (see scripts/prerender.mjs) for any path with no
+# matching file — every route this app has other than '/', i.e. '/admin' — so a direct
+# link or refresh on it boots the app instead of a bare host error page. Apache-only;
+# inert (and harmless) on anything else, same as GitHub Pages' equivalent, native
+# handling of a root-level 404.html.
+ErrorDocument 404 /404.html

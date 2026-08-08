@@ -182,6 +182,14 @@ const html = template
 
 writeFileSync(join(DIST, 'index.html'), html);
 
+// A static host (GitHub Pages, and this site's own FTP host — neither ships an
+// .htaccess/_redirects from this repo) serves 404.html for any path with no matching
+// file, which is every route this SPA has other than '/' (i.e. '/admin'). `template`
+// here is the plain, un-prerendered shell — not `html` above — on purpose: it boots
+// fresh into whatever route the real pathname says, rather than flashing the home
+// page's prerendered markup before Admin.tsx replaces it.
+writeFileSync(join(DIST, '404.html'), template);
+
 // ---- sitemap + robots -----------------------------------------------------------
 const today = new Date().toISOString().slice(0, 10);
 writeFileSync(
