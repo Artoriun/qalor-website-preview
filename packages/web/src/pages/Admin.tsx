@@ -74,28 +74,30 @@ function SignIn({ onSuccess }: { onSuccess: () => void }) {
   return (
     <div className="admin admin-signin">
       <Navbar />
-      <h1>Beheer</h1>
-      <form onSubmit={submit}>
-        <div className="admin-field">
-          <label htmlFor="password">Wachtwoord</label>
-          <input
-            id="password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            autoComplete="current-password"
-            autoFocus
-          />
-        </div>
-        {error && (
-          <p className="admin-status error" role="alert">
-            {error}
-          </p>
-        )}
-        <button type="submit" className="admin-btn admin-btn-primary" disabled={busy}>
-          {busy ? 'Bezig…' : 'Inloggen'}
-        </button>
-      </form>
+      <main>
+        <h1>Beheer</h1>
+        <form onSubmit={submit}>
+          <div className="admin-field">
+            <label htmlFor="password">Wachtwoord</label>
+            <input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoComplete="current-password"
+              autoFocus
+            />
+          </div>
+          {error && (
+            <p className="admin-status error" role="alert">
+              {error}
+            </p>
+          )}
+          <button type="submit" className="admin-btn admin-btn-primary" disabled={busy}>
+            {busy ? 'Bezig…' : 'Inloggen'}
+          </button>
+        </form>
+      </main>
     </div>
   );
 }
@@ -124,169 +126,171 @@ function AdminPanel({
   return (
     <div className="admin">
       <Navbar />
-      <div className="admin-header">
-        <h1>Beheer</h1>
-        <div className="admin-actions">
-          <button
-            type="button"
-            className="admin-btn admin-btn-secondary"
-            onClick={async () => {
-              if (!confirm('Alle sessies (ook deze) uitloggen?')) return;
-              await apiRevokeAll();
-              onSignOut();
-            }}
-          >
-            Overal uitloggen
-          </button>
-          <button type="button" className="admin-btn admin-btn-secondary" onClick={onSignOut}>
-            Uitloggen
-          </button>
+      <main>
+        <div className="admin-header">
+          <h1>Beheer</h1>
+          <div className="admin-actions">
+            <button
+              type="button"
+              className="admin-btn admin-btn-secondary"
+              onClick={async () => {
+                if (!confirm('Alle sessies (ook deze) uitloggen?')) return;
+                await apiRevokeAll();
+                onSignOut();
+              }}
+            >
+              Overal uitloggen
+            </button>
+            <button type="button" className="admin-btn admin-btn-secondary" onClick={onSignOut}>
+              Uitloggen
+            </button>
+          </div>
         </div>
-      </div>
 
-      <div className="admin-tabs">
-        {TABS.map((t) => (
-          <button
-            key={t.id}
-            type="button"
-            className={`admin-tab${tab === t.id ? ' active' : ''}`}
-            onClick={() => setTab(t.id)}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
+        <div className="admin-tabs">
+          {TABS.map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              className={`admin-tab${tab === t.id ? ' active' : ''}`}
+              onClick={() => setTab(t.id)}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
 
-      {tab === 'hero' && (
-        <SingletonEditor
-          id="hero"
-          values={content.hero}
-          fields={[
-            { key: 'headline', label: 'Titel', type: 'text' },
-            { key: 'subheadline', label: 'Subtitel', type: 'text' },
-            { key: 'image', label: 'Afbeelding', type: 'image' },
-          ]}
-          onSaved={refresh}
-        />
-      )}
-
-      {tab === 'about' && <AboutEditor values={content.about} onSaved={refresh} />}
-
-      {tab === 'workProcess' && (
-        <>
+        {tab === 'hero' && (
           <SingletonEditor
-            id="workProcessIntro"
-            values={content.workProcessIntro}
+            id="hero"
+            values={content.hero}
             fields={[
-              { key: 'eyebrow', label: 'Label', type: 'text' },
-              { key: 'heading', label: 'Titel', type: 'text' },
-            ]}
-            onSaved={refresh}
-          />
-          <ListEditor
-            list="workProcessSteps"
-            items={content.workProcessSteps}
-            fields={[
-              { key: 'number', label: 'Nummer', type: 'text' },
-              { key: 'title', label: 'Titel', type: 'text' },
-              { key: 'body', label: 'Tekst', type: 'textarea' },
-              { key: 'image', label: 'Afbeelding', type: 'image' },
-              { key: 'alt', label: 'Alt-tekst afbeelding', type: 'text' },
-            ]}
-            itemLabel={(item) => (item as { title?: string }).title || 'Nieuwe stap'}
-            onSaved={refresh}
-          />
-        </>
-      )}
-
-      {tab === 'projects' && (
-        <>
-          <SingletonEditor
-            id="projectsIntro"
-            values={content.projectsIntro}
-            fields={[
-              { key: 'eyebrow', label: 'Label', type: 'text' },
-              { key: 'heading', label: 'Titel', type: 'text' },
-            ]}
-            onSaved={refresh}
-          />
-          <ListEditor
-            list="projects"
-            items={content.projects}
-            fields={[
-              { key: 'name', label: 'Naam', type: 'text' },
-              { key: 'role', label: 'Rol/type', type: 'text' },
-              { key: 'description', label: 'Omschrijving', type: 'textarea' },
+              { key: 'headline', label: 'Titel', type: 'text' },
+              { key: 'subheadline', label: 'Subtitel', type: 'text' },
               { key: 'image', label: 'Afbeelding', type: 'image' },
             ]}
-            itemLabel={(item) => (item as { name?: string }).name || 'Nieuw project'}
             onSaved={refresh}
-            // description can be a string or string[] on the bundled defaults — normalise
-            // to one string per line for the textarea, and back on save.
-            normalizeIn={(item) => ({
-              ...item,
-              description: Array.isArray(item.description)
-                ? item.description.join('\n')
-                : item.description,
-            })}
-            normalizeOut={(draft) => ({
-              ...draft,
-              description:
-                typeof draft.description === 'string' && draft.description.includes('\n')
-                  ? draft.description.split('\n').filter(Boolean)
-                  : draft.description,
-            })}
           />
-        </>
-      )}
+        )}
 
-      {tab === 'team' && (
-        <>
+        {tab === 'about' && <AboutEditor values={content.about} onSaved={refresh} />}
+
+        {tab === 'workProcess' && (
+          <>
+            <SingletonEditor
+              id="workProcessIntro"
+              values={content.workProcessIntro}
+              fields={[
+                { key: 'eyebrow', label: 'Label', type: 'text' },
+                { key: 'heading', label: 'Titel', type: 'text' },
+              ]}
+              onSaved={refresh}
+            />
+            <ListEditor
+              list="workProcessSteps"
+              items={content.workProcessSteps}
+              fields={[
+                { key: 'number', label: 'Nummer', type: 'text' },
+                { key: 'title', label: 'Titel', type: 'text' },
+                { key: 'body', label: 'Tekst', type: 'textarea' },
+                { key: 'image', label: 'Afbeelding', type: 'image' },
+                { key: 'alt', label: 'Alt-tekst afbeelding', type: 'text' },
+              ]}
+              itemLabel={(item) => (item as { title?: string }).title || 'Nieuwe stap'}
+              onSaved={refresh}
+            />
+          </>
+        )}
+
+        {tab === 'projects' && (
+          <>
+            <SingletonEditor
+              id="projectsIntro"
+              values={content.projectsIntro}
+              fields={[
+                { key: 'eyebrow', label: 'Label', type: 'text' },
+                { key: 'heading', label: 'Titel', type: 'text' },
+              ]}
+              onSaved={refresh}
+            />
+            <ListEditor
+              list="projects"
+              items={content.projects}
+              fields={[
+                { key: 'name', label: 'Naam', type: 'text' },
+                { key: 'role', label: 'Rol/type', type: 'text' },
+                { key: 'description', label: 'Omschrijving', type: 'textarea' },
+                { key: 'image', label: 'Afbeelding', type: 'image' },
+              ]}
+              itemLabel={(item) => (item as { name?: string }).name || 'Nieuw project'}
+              onSaved={refresh}
+              // description can be a string or string[] on the bundled defaults — normalise
+              // to one string per line for the textarea, and back on save.
+              normalizeIn={(item) => ({
+                ...item,
+                description: Array.isArray(item.description)
+                  ? item.description.join('\n')
+                  : item.description,
+              })}
+              normalizeOut={(draft) => ({
+                ...draft,
+                description:
+                  typeof draft.description === 'string' && draft.description.includes('\n')
+                    ? draft.description.split('\n').filter(Boolean)
+                    : draft.description,
+              })}
+            />
+          </>
+        )}
+
+        {tab === 'team' && (
+          <>
+            <SingletonEditor
+              id="teamIntro"
+              values={content.teamIntro}
+              fields={[
+                { key: 'eyebrow', label: 'Label', type: 'text' },
+                { key: 'heading', label: 'Titel', type: 'text' },
+              ]}
+              onSaved={refresh}
+            />
+            <ListEditor
+              list="team"
+              items={content.team}
+              fields={[
+                { key: 'name', label: 'Naam', type: 'text' },
+                { key: 'description', label: 'Functie', type: 'text' },
+                { key: 'photoUrl', label: 'Foto', type: 'image' },
+                { key: 'pdfPath', label: 'CV (PDF)', type: 'file' },
+              ]}
+              itemLabel={(item) => {
+                const m = item as { name?: string; isImage?: boolean };
+                if (m.isImage) return 'Logo (carrousel-afsluiter, geen teamlid)';
+                return m.name || 'Nieuw teamlid';
+              }}
+              onSaved={refresh}
+            />
+          </>
+        )}
+
+        {tab === 'footer' && (
           <SingletonEditor
-            id="teamIntro"
-            values={content.teamIntro}
+            id="footer"
+            values={content.footer}
             fields={[
-              { key: 'eyebrow', label: 'Label', type: 'text' },
-              { key: 'heading', label: 'Titel', type: 'text' },
+              { key: 'tagline', label: 'Ondertitel', type: 'text' },
+              { key: 'email', label: 'E-mail', type: 'text' },
+              { key: 'phone', label: 'Telefoon', type: 'text' },
+              { key: 'address', label: 'Adres', type: 'text' },
+              { key: 'addressUrl', label: 'Adres-link (Google Maps)', type: 'text' },
+              { key: 'btwNumber', label: 'Btw-nummer', type: 'text' },
+              { key: 'iban', label: 'IBAN', type: 'text' },
+              { key: 'copyright', label: 'Copyright-tekst', type: 'text' },
             ]}
             onSaved={refresh}
           />
-          <ListEditor
-            list="team"
-            items={content.team}
-            fields={[
-              { key: 'name', label: 'Naam', type: 'text' },
-              { key: 'description', label: 'Functie', type: 'text' },
-              { key: 'photoUrl', label: 'Foto', type: 'image' },
-              { key: 'pdfPath', label: 'CV (PDF)', type: 'file' },
-            ]}
-            itemLabel={(item) => {
-              const m = item as { name?: string; isImage?: boolean };
-              if (m.isImage) return 'Logo (carrousel-afsluiter, geen teamlid)';
-              return m.name || 'Nieuw teamlid';
-            }}
-            onSaved={refresh}
-          />
-        </>
-      )}
-
-      {tab === 'footer' && (
-        <SingletonEditor
-          id="footer"
-          values={content.footer}
-          fields={[
-            { key: 'tagline', label: 'Ondertitel', type: 'text' },
-            { key: 'email', label: 'E-mail', type: 'text' },
-            { key: 'phone', label: 'Telefoon', type: 'text' },
-            { key: 'address', label: 'Adres', type: 'text' },
-            { key: 'addressUrl', label: 'Adres-link (Google Maps)', type: 'text' },
-            { key: 'btwNumber', label: 'Btw-nummer', type: 'text' },
-            { key: 'iban', label: 'IBAN', type: 'text' },
-            { key: 'copyright', label: 'Copyright-tekst', type: 'text' },
-          ]}
-          onSaved={refresh}
-        />
-      )}
+        )}
+      </main>
     </div>
   );
 }
