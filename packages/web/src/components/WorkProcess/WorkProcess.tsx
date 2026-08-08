@@ -1,16 +1,17 @@
 import { useEffect, useState } from 'react';
+import { useContent } from '../../context/ContentContext';
 import { optimizeUrl } from '../../lib/images';
 import './WorkProcess.css';
 
-const CLOUDINARY = 'https://res.cloudinary.com/o5hr8kjc/image/upload';
-const nettekeningImg = `${CLOUDINARY}/qalor/workprocess-nettekening.jpg`;
-const gebouwendatabaseImg = `${CLOUDINARY}/qalor/workprocess-gebouwendatabase.jpg`;
-const berekeningImg = `${CLOUDINARY}/qalor/workprocess-berekening.jpg`;
+// Every step shares one look (see the note in the STEPS array this replaced) — not part of
+// the admin-editable WorkProcessStep shape, since it's presentation, not content.
+const STEP_GRADIENT = 'linear-gradient(135deg, #FFA940, #F18825)';
+const STEP_SHADOW = '0 4px 15px rgba(241,136,37,0.3)';
 
 const learnMoreButtonStyle = (compact: boolean): React.CSSProperties => ({
   padding: compact ? '0.75rem 1.5rem' : '1rem 2rem',
   background: 'transparent',
-  color: '#000',
+  color: 'var(--text-heading)',
   border: 'none',
   borderRadius: compact ? '6px' : '8px',
   cursor: 'pointer',
@@ -34,62 +35,22 @@ const numberBadgeStyle = (
   height: compact ? '60px' : '80px',
   borderRadius: '50%',
   background: gradient,
-  color: '#2B1400',
+  color: 'var(--accent-on-fill)',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
   fontSize: compact ? '1.5rem' : '2rem',
   fontWeight: 'bold',
   boxShadow: shadow,
-  border: compact ? '3px solid #fff' : '4px solid #fff',
+  border: compact ? '3px solid var(--bg-page)' : '4px solid var(--bg-page)',
   position: 'relative',
   zIndex: 3,
 });
 
-type Step = {
-  number: string;
-  title: string;
-  body: string;
-  image: string;
-  alt: string;
-  gradient: string;
-  shadow: string;
-};
-
-const STEPS: Step[] = [
-  {
-    number: '01',
-    title: 'Het vervaardigen van een nettekening in AutoCAD',
-    body: 'Een betrouwbare calculatie van een warmteproject vereist dat als eerste er een kundige nettekening in AutoCAD wordt gemaakt. De basis voor de ondergrond is daarbij immer een oriëntatiemelding van het Kadaster die de bezetting van de ondergrond gedetailleerd weergeeft.',
-    image: nettekeningImg,
-    alt: 'AutoCAD Nettekening',
-    // All three steps share one gradient (the previous per-step variants were also part
-    // of the inconsistent-orange problem). Full brightness: the digits are #2B1400 (warm
-    // espresso), not white, so nothing here needs darkening for contrast.
-    gradient: 'linear-gradient(135deg, #FFA940, #F18825)',
-    shadow: '0 4px 15px rgba(241,136,37,0.3)',
-  },
-  {
-    number: '02',
-    title: 'Het maken van de gebouwendatabase',
-    body: 'Een betrouwbare bepaling van de vermogensbehoefte van het warmteproject vereist dat er op basis van diverse openbare bronnen, waaronder het BAG-register en Atlas Leefomgeving, er een complete gebouwendatabase opgesteld wordt.',
-    image: gebouwendatabaseImg,
-    alt: 'Gebouwendatabase',
-    gradient: 'linear-gradient(135deg, #FFA940, #F18825)',
-    shadow: '0 4px 15px rgba(241,136,37,0.3)',
-  },
-  {
-    number: '03',
-    title: 'Het maken van de exploitatieberekening',
-    body: "Op basis van de AutoCAD tekening, de woningendatabase en de bepaling van het concept en de investeringen van de energie-opwekinstallatie wordt een uitgebreid financieel model in Excel gevuld, waarbij op basis van verschillende uitgangspunten diverse scenario's worden gemaakt.",
-    image: berekeningImg,
-    alt: 'Exploitatieberekening',
-    gradient: 'linear-gradient(135deg, #FFA940, #F18825)',
-    shadow: '0 4px 15px rgba(241,136,37,0.3)',
-  },
-];
-
 const WorkProcess = () => {
+  const { content } = useContent();
+  const { eyebrow, heading } = content.workProcessIntro;
+  const steps = content.workProcessSteps;
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   const [isTablet, setIsTablet] = useState(false);
   const [isLandscape, setIsLandscape] = useState(false);
@@ -128,7 +89,7 @@ const WorkProcess = () => {
       data-aos="fade-right"
       style={{
         padding: useMobileLayout ? (isLandscape ? '60px 15px' : '80px 20px') : '80px 20px',
-        backgroundColor: '#fff',
+        backgroundColor: 'var(--bg-page)',
         width: '100%',
         overflow: 'hidden', // Prevent horizontal overflow in landscape
         position: 'relative', // Ensure proper positioning context
@@ -150,26 +111,26 @@ const WorkProcess = () => {
           <div
             style={{
               fontSize: '1.6rem',
-              color: '#E5770F',
+              color: 'var(--accent-text-strong)',
               marginBottom: '0.5rem',
               fontWeight: '400',
               fontFamily:
                 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", sans-serif',
             }}
           >
-            • Hoe wij te werk gaan
+            • {eyebrow}
           </div>
           <h2
             style={{
               fontSize: '2.5rem',
               margin: '0',
-              color: '#333',
+              color: 'var(--text-heading)',
               fontWeight: '600',
               fontFamily:
                 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", sans-serif',
             }}
           >
-            Ons werkproces
+            {heading}
           </h2>
         </div>
 
@@ -209,7 +170,7 @@ const WorkProcess = () => {
             />
           )}
 
-          {STEPS.map((step, index) => {
+          {steps.map((step, index) => {
             // Desktop alternates image side: even steps image-left, odd steps image-right.
             const imageFirst = index % 2 === 0;
             const image = (
@@ -246,7 +207,7 @@ const WorkProcess = () => {
                   alignItems: 'center',
                 }}
               >
-                <div style={numberBadgeStyle(step.gradient, step.shadow, false)}>{step.number}</div>
+                <div style={numberBadgeStyle(STEP_GRADIENT, STEP_SHADOW, false)}>{step.number}</div>
               </div>
             );
             const text = (
@@ -255,7 +216,7 @@ const WorkProcess = () => {
                   style={{
                     fontSize: '1.8rem',
                     marginBottom: '1.5rem',
-                    color: '#333',
+                    color: 'var(--text-heading)',
                     lineHeight: '1.3',
                   }}
                 >
@@ -264,7 +225,7 @@ const WorkProcess = () => {
                 <p
                   style={{
                     lineHeight: '1.7',
-                    color: '#555',
+                    color: 'var(--text-body)',
                     marginBottom: '2rem',
                     fontSize: '1.1rem',
                   }}
@@ -312,7 +273,7 @@ const WorkProcess = () => {
                         boxSizing: 'border-box',
                       }}
                     >
-                      <div style={numberBadgeStyle(step.gradient, step.shadow, true)}>
+                      <div style={numberBadgeStyle(STEP_GRADIENT, STEP_SHADOW, true)}>
                         {step.number}
                       </div>
                     </div>
@@ -332,7 +293,7 @@ const WorkProcess = () => {
                           style={{
                             fontSize: '1.5rem',
                             marginBottom: '1rem',
-                            color: '#333',
+                            color: 'var(--text-heading)',
                             lineHeight: '1.3',
                           }}
                         >
@@ -341,7 +302,7 @@ const WorkProcess = () => {
                         <p
                           style={{
                             lineHeight: '1.6',
-                            color: '#555',
+                            color: 'var(--text-body)',
                             marginBottom: '1.5rem',
                             fontSize: '1rem',
                           }}
