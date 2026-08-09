@@ -32,7 +32,14 @@ const About = () => {
 
   const headingSize = isMobile ? '2rem' : isTablet ? '2.25rem' : '2.5rem';
   const imageHeight = isMobile ? '300px' : isTablet ? '380px' : '450px';
-  const imagePosition = isMobile ? 'center -50px' : isTablet ? 'center -90px' : 'center -125px';
+  // A percentage, not the three fixed pixel offsets this used to have. The source photo is
+  // portrait (600x800) and the frame is landscape, so `cover` scales it up and leaves a lot
+  // of vertical overflow — how much depends entirely on the frame's aspect. On a phone in
+  // landscape the frame is roughly 868x298, which overflows by ~859px, and a 50px nudge off
+  // the top left the shot showing sky and roofline with both faces pushed out of frame. A
+  // percentage is resolved against that overflow, so one value keeps the subjects framed at
+  // every size instead of needing a new magic number per breakpoint.
+  const imagePosition = 'center 20%';
 
   return (
     <section
