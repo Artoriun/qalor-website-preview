@@ -12,15 +12,18 @@ Lighthouse audit and a bundle budget — nothing publishes unless all of it pass
 
 ## Features
 
-- Single-page site — Hero, Team, Qalor/About, Werkproces, Projecten and Footer, all
-  anchor-scrolled from the nav. No client-side router: an earlier `react-router-dom`
+- Single-page marketing site — Hero, Team, Qalor/About, Werkproces, Projecten and Footer,
+  all anchor-scrolled from the nav. No client-side router: an earlier `react-router-dom`
   dependency was dead weight (nothing ever rendered a `<Route>`) and got dropped in the
-  TypeScript port.
+  TypeScript port; the handful of extra routes below are plain `pathname` checks.
 - **Every section is admin-editable at `/admin`** — no code change or redeploy needed to
   update copy, images, team members, or projects. See [ADMIN.md](ADMIN.md).
-- Prerendered on build: a real browser boots the built app and its DOM is written back
-  into `index.html`, so a visitor's first response is actual content, not a blank shell
-  waiting on JavaScript.
+- **SEO landing pages** at `/warmtenet-tekening/`, `/warmtenet-ontwerp/`,
+  `/warmtenetberekening/` and `/warmtenet-business-case/` — one page per search intent,
+  each with its own copy, title, canonical and `Service` schema. See [SEO.md](SEO.md).
+- Prerendered on build: a real browser boots the built app on each route and writes the
+  resulting DOM back into that route's `index.html`, so a visitor's (or crawler's) first
+  response is actual content, not a blank shell waiting on JavaScript.
 - Team and project carousels — auto-advancing, drag/swipe-enabled, infinite-wrap.
 - Team member CVs open in a modal PDF viewer (`@react-pdf-viewer/core`).
 - Below-the-fold sections (Team, About, Werkproces, Projecten, Footer) are
@@ -57,20 +60,21 @@ e2e/
 ├── layout.spec.ts        # overflow, exactly one h1, footer bounds, hamburger menu, CV modal
 └── a11y.spec.ts           # axe sweep at every viewport
 scripts/
-├── prerender.mjs          # captures the built app's DOM into index.html + sitemap.xml/robots.txt
+├── prerender.mjs          # captures each route's DOM into <route>/index.html, + sitemap/robots/llms
 ├── check-budgets.mjs       # gzipped initial-payload budget
 └── check-lighthouse.mjs    # accessibility/SEO/best-practices thresholds on the built output
 packages/
-├── shared/src/index.ts    # typed content schema + bundled defaults for every section — one
-│                          #   file, no relative imports; see the note at the top for why
+├── shared/src/index.ts    # typed content schema + bundled defaults for every section, and
+│                          #   SERVICE_PAGES (the SEO landing pages) — one file, no relative
+│                          #   imports; see the note at the top for why
 ├── api/                   # admin API: Express + Firestore + JWT auth, see ADMIN.md
 │   └── src/routes/        # auth.ts, content.ts (singleton + list section merge logic)
 └── web/                   # the Vite/React app
-    ├── public/            # PDF worker, team CVs, favicon
+    ├── public/            # PDF worker, team CVs, favicon, .htaccess (SPA 404 fallback)
     └── src/
         ├── components/    # one folder per section, each reading from ContentContext
         ├── context/       # ContentContext.tsx — bundle/prerender/live-API content merge
-        └── pages/Admin.tsx  # the admin portal itself, lazy-loaded at /admin
+        └── pages/         # Admin.tsx (lazy, /admin) and ServicePage.tsx (the SEO routes)
 ```
 
 ## Quick Start
@@ -122,6 +126,11 @@ accessibility/SEO/best-practices at 100 — performance is measured and printed 
 gated, since a shared CI runner's timings vary by more than the thing being measured.
 `npm run check:budgets` is the deterministic half of that: a gzipped bundle-size ceiling.
 
+`npm run prerender` gates itself too: it fails the build if a route captures almost no text,
+or if any route logs a React hydration error — a mismatch there means the prerendered markup
+is being thrown away and re-rendered, which is invisible to look at but undoes the point of
+prerendering entirely.
+
 ## Deployment
 
 CI's `deploy` job builds, prerenders, and uploads `packages/web/dist/` over FTP to the
@@ -134,6 +143,13 @@ weekly schedule so admin-portal edits reach crawlers even without a manual redep
   site's document root (defaults to `/`)
 - `VITE_API_URL`, once the admin API is deployed — see [ADMIN.md](ADMIN.md) for the full
   walkthrough (Firestore, Cloudinary, Render, all still on local placeholders today)
+
+Two build-time env vars matter outside CI:
+
+| Variable | Effect |
+|---|---|
+| `VITE_BASE` | Base path. `/` for the real domain; `/qalor-website-preview/` for the GitHub Pages preview. Read by `vite.config.ts` **and** `prerender.mjs`, so build and preview can't disagree. |
+| `NOINDEX=1` | Adds a `robots` noindex to every prerendered page and drops the sitemap line from `robots.txt`. Set on preview builds so they don't compete with qalor.nl — see [SEO.md](SEO.md). |
 
 ## Licence
 
