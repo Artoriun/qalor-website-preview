@@ -8,7 +8,9 @@ Lighthouse audit and a bundle budget — nothing publishes unless all of it pass
 
 **Live preview site:** https://artoriun.github.io/qalor-website-preview/
 
-<img width="1440" alt="Qalor homepage" src=".github/readme-assets/homepage.png" />
+<img width="1440" alt="Qalor homepage in light mode" src=".github/readme-assets/homepage.png" />
+
+<img width="1440" alt="The same page in dark mode — the navigation bar and page background go dark while the Hero's orange fill is unchanged" src=".github/readme-assets/homepage-dark.png" />
 
 ## Features
 
@@ -18,6 +20,13 @@ Lighthouse audit and a bundle budget — nothing publishes unless all of it pass
   TypeScript port; the handful of extra routes below are plain `pathname` checks.
 - **Every section is admin-editable at `/admin`** — no code change or redeploy needed to
   update copy, images, team members, or projects. See [ADMIN.md](ADMIN.md).
+- **WCAG AA dark mode**, toggled from the header. CSS custom properties on `:root`,
+  redefined under `[data-theme="dark"]` and set by a blocking inline script in
+  `index.html` before first paint — so there's no flash of the wrong theme and nothing for
+  React to disagree with on hydration. Light is the standard first visit regardless of the
+  OS setting; only an explicit toggle (persisted to `localStorage`) switches it. The
+  orange *fills* are deliberately theme-invariant: a button's own background against its
+  own label never depended on the page behind it.
 - **SEO landing pages** at `/warmtenet-tekening/`, `/warmtenet-ontwerp/`,
   `/warmtenetberekening/` and `/warmtenet-business-case/` — one page per search intent,
   each with its own copy, title, canonical and `Service` schema. See [SEO.md](SEO.md).
@@ -121,7 +130,10 @@ they're far enough down that this isn't a risk.
 `npm run test:e2e` runs layout assertions (no horizontal overflow, exactly one `h1`,
 nothing renders past the footer, the mobile hamburger menu works, the team CV modal
 opens/closes) and an axe-core accessibility sweep, both across desktop and two mobile
-viewports. `npm run check:lighthouse` audits the built, prerendered output and gates on
+viewports. The sweep covers the home page, a service landing page and the admin sign-in
+screen, each in **both light and dark mode** — the dark pass flips the real header toggle
+rather than pre-seeding `localStorage`, so it exercises the toggle itself as well as the
+tokens underneath it. `npm run check:lighthouse` audits the built, prerendered output and gates on
 accessibility/SEO/best-practices at 100 — performance is measured and printed but never
 gated, since a shared CI runner's timings vary by more than the thing being measured.
 `npm run check:budgets` is the deterministic half of that: a gzipped bundle-size ceiling.
