@@ -72,10 +72,15 @@ playwright.config.ts      # 3 viewport projects (desktop, mobile portrait, mobil
 biome.json                 # lint + format config
 turbo.json                  # build/dev/typecheck task graph
 e2e/
-├── layout.spec.ts        # overflow, exactly one h1, footer bounds, hamburger menu, CV modal
+├── fixtures.ts           # shared `test`: any uncaught page error fails the test
+├── layout.spec.ts        # overflow, one h1, footer bounds, CV modal, landscape geometry
 ├── carousel.spec.ts       # drag threshold/snap-back, pause + resume, arrow keys, overflow
-└── a11y.spec.ts           # axe sweep at every viewport, light and dark
+├── touch.spec.ts          # touch-only behaviour (the rest of the matrix has no touch)
+├── subpath.spec.ts        # the build served from a project subpath
+└── a11y.spec.ts           # axe sweep at every viewport, light and dark, incl. the CV modal
 scripts/
+├── lib/static-server.mjs  # serves dist like the real host (base path, 404.html); shared
+├── serve-dist.mjs         # CLI wrapper, used as Playwright's webServer for the built output
 ├── prerender.mjs          # captures each route's DOM into <route>/index.html, + sitemap/robots/llms
 ├── check-budgets.mjs       # gzipped initial-payload budget
 └── check-lighthouse.mjs    # accessibility/SEO/best-practices thresholds on the built output
@@ -113,7 +118,9 @@ Cloudinary account needed to try it. See [ADMIN.md](ADMIN.md).
 | `npm run check` | Biome lint + format check |
 | `npm run format` | Biome format, writes fixes |
 | `npm run test:api` | API unit tests (auth, content merge/override, rate limiting) |
-| `npm run test:e2e` | Playwright layout + accessibility suite |
+| `npm run test:e2e` | Playwright suite against the dev server |
+| `npm run test:e2e:dist` | The same suite against the built, prerendered output |
+| `npm run test:e2e:subpath` | The subpath build (as GitHub Pages serves it) |
 | `npm run prerender` | Capture the built app's DOM into `index.html`; needs `npm run build` first |
 | `npm run check:budgets` | Gzipped initial-payload budget |
 | `npm run check:lighthouse` | Lighthouse gate; needs `build` + `prerender` first |
@@ -146,9 +153,16 @@ gated, since a shared CI runner's timings vary by more than the thing being meas
 `npm run check:budgets` is the deterministic half of that: a gzipped bundle-size ceiling.
 
 `npm run prerender` gates itself too: it fails the build if a route captures almost no text,
-or if any route logs a React hydration error — a mismatch there means the prerendered markup
-is being thrown away and re-rendered, which is invisible to look at but undoes the point of
-prerendering entirely.
+if any route logs a React hydration error, or if a route **lays out differently once
+hydrated** than it did on first paint. That last one exists because a React error is not the
+only way prerendering goes wrong: a component that decides its layout from
+`window.innerWidth` hydrates "cleanly" while a phone visibly watches the heading jump from
+4rem to 3rem, because the prerendered HTML was captured at a desktop viewport.
+
+The suite runs three times in CI: against the dev server, against the built and prerendered
+output, and against a build made for the GitHub Pages project subpath. The last two are not
+redundant — prerendering and base paths are where several bugs have lived, and neither
+exists on the dev server.
 
 ## Deployment
 

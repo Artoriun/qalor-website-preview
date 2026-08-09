@@ -12,12 +12,11 @@
  * Serves the output itself rather than assuming a server is up.
  */
 import { execFile } from 'node:child_process';
-import { createReadStream, existsSync, readFileSync, statSync } from 'node:fs';
-import { createServer } from 'node:http';
-import { extname, join, normalize } from 'node:path';
+import { existsSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { createGzip } from 'node:zlib';
 import { chromium } from '@playwright/test';
+import { createStaticServer, listen } from './lib/static-server.mjs';
 
 function runLighthouse(args, env) {
   return new Promise((resolve, reject) => {
@@ -33,60 +32,22 @@ const CHROME_PATH = chromium.executablePath();
 
 const THRESHOLDS = { accessibility: 100, seo: 100, 'best-practices': 100 };
 
-const TYPES = {
-  '.html': 'text/html; charset=utf-8',
-  '.js': 'text/javascript',
-  '.css': 'text/css',
-  '.svg': 'image/svg+xml',
-  '.woff2': 'font/woff2',
-  '.json': 'application/json',
-  '.xml': 'application/xml',
-  '.txt': 'text/plain',
-  '.png': 'image/png',
-  '.jpg': 'image/jpeg',
-  '.jpeg': 'image/jpeg',
-  '.webp': 'image/webp',
-};
+// Gated, unlike performance. The distinction is not arbitrary: performance is dominated by
+// wall-clock timings that drift with whatever else a shared CI runner is doing, whereas CLS
+// measures how much the layout moved — a property of the markup and CSS, not of the machine.
+// It sat at an intermittent 0.033 while the Hero painted a desktop layout and then snapped to
+// the mobile one, and has been a steady 0 since that was fixed; 0.05 leaves room for noise
+// without letting a real shift back in.
+const MAX_CLS = 0.05;
 
 if (!existsSync(join(DIST, 'index.html'))) {
   console.error('✗ no build to audit — run `npm run build && npm run prerender` first');
   process.exit(1);
 }
 
-const COMPRESSIBLE = new Set(['.html', '.js', '.css', '.svg', '.json', '.xml', '.txt']);
-
-const server = createServer((req, res) => {
-  const url = new URL(req.url, 'http://localhost');
-  const path = decodeURIComponent(url.pathname);
-  // normalize collapses any ../ before it can escape DIST.
-  let file = join(DIST, normalize(`/${path}`));
-  if (existsSync(file) && statSync(file).isDirectory()) file = join(file, 'index.html');
-  if (!existsSync(file)) file = join(DIST, 'index.html');
-  const gzip =
-    COMPRESSIBLE.has(extname(file)) && (req.headers['accept-encoding'] ?? '').includes('gzip');
-  res.writeHead(200, {
-    'Content-Type': TYPES[extname(file)] ?? 'application/octet-stream',
-    'Cache-Control': 'public, max-age=600',
-    ...(gzip ? { 'Content-Encoding': 'gzip' } : {}),
-  });
-  const stream = createReadStream(file);
-  if (gzip) stream.pipe(createGzip()).pipe(res);
-  else stream.pipe(res);
-});
-
-await new Promise((resolve, reject) => {
-  server.once('error', (err) =>
-    reject(
-      err.code === 'EADDRINUSE'
-        ? new Error(`port ${PORT} is already in use — free it, or set LH_PORT`)
-        : err,
-    ),
-  );
-  server.listen(PORT, resolve);
-}).catch((err) => {
-  console.error(`✗ ${err.message}`);
-  process.exit(1);
-});
+// Shared with the Playwright run against the built output — see scripts/lib/static-server.mjs.
+const server = createStaticServer({ dist: DIST, basePath: '/' });
+await listen(server, PORT);
 
 let failed = false;
 try {
@@ -117,6 +78,17 @@ try {
       `LCP ${report.audits['largest-contentful-paint'].displayValue}  ` +
       `CLS ${report.audits['cumulative-layout-shift'].displayValue}`,
   );
+
+  const cls = report.audits['cumulative-layout-shift'].numericValue ?? 0;
+  const clsOk = cls <= MAX_CLS;
+  console.log(`    ${clsOk ? '✓' : '✗'} CLS ${cls.toFixed(3)} (max ${MAX_CLS})`);
+  if (!clsOk) {
+    failed = true;
+    for (const item of (report.audits['layout-shifts']?.details?.items ?? []).slice(0, 5)) {
+      const where = item.node?.selector ?? item.url ?? item.description;
+      if (where) console.log(`        ${String(where).slice(0, 110)}`);
+    }
+  }
 
   for (const [id, min] of Object.entries(THRESHOLDS)) {
     const actual = score(id);

@@ -1,5 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
-import { expect, type Page, test } from '@playwright/test';
+import type { Page } from '@playwright/test';
+import { expect, test } from './fixtures';
 
 const AXE_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
 
@@ -95,4 +96,31 @@ test('a service landing page has no accessibility violations in dark mode', asyn
   await page.waitForSelector('#footer');
   await switchToDarkMode(page);
   await assertNoViolations(page);
+});
+
+// Overlays were never swept. The CV modal shipped with a 4.27:1 contrast failure on its
+// fallback link — --accent-text-body is tuned against --bg-page (4.51:1) and measures 4.27:1
+// on --bg-section — which was found by running axe against the open modal by hand, not by
+// this suite. Anything that covers the page deserves the same scan the page gets.
+async function openCvModal(page: Page) {
+  await page.goto('/');
+  const team = page.getByRole('region', { name: 'Teamleden' });
+  // Pause first: the carousel auto-advances, so a CV control is otherwise a moving target.
+  await team.getByRole('button', { name: /pauzeren/i }).click();
+  const cv = team.locator('.carousel-slide:not([inert]) .team-cv-button').first();
+  await cv.waitFor({ state: 'visible', timeout: 15_000 });
+  await cv.click();
+  await expect(page.locator('.pdf-modal-container')).toBeVisible();
+}
+
+test('the CV modal has no accessibility violations', async ({ page }) => {
+  await openCvModal(page);
+  await assertNoViolations(page, '.pdf-modal-container');
+});
+
+test('the CV modal has no accessibility violations in dark mode', async ({ page }) => {
+  await page.goto('/');
+  await switchToDarkMode(page);
+  await openCvModal(page);
+  await assertNoViolations(page, '.pdf-modal-container');
 });

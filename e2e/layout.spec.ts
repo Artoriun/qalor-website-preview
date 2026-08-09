@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures';
 
 /**
  * Layout assertions, not feature tests — the class of regression a human only notices on
@@ -88,4 +88,61 @@ test('opening a team member CV and closing it with Escape works', async ({ page 
 
   await page.keyboard.press('Escape');
   await expect(page.locator('.pdf-modal-container')).toBeHidden();
+});
+
+// Two assertions that each encode a bug found by hand on a phone in landscape. Both are
+// geometry, not appearance — cheap and deterministic, unlike a screenshot baseline.
+test('the Qalor section stacks rather than sitting side by side on a short viewport', async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== 'mobile-landscape', 'short-viewport behaviour');
+  await page.goto('/');
+  // A phone in landscape is ~915x412 — wide enough to have been treated as a tablet, so it
+  // got the side-by-side grid and a 380px image inside a 412px-tall viewport.
+  const stacked = await page.locator('#qalor').evaluate((section) => {
+    const img = section.querySelector('img');
+    const heading = section.querySelector('h3');
+    if (!img || !heading) return null;
+    const imgRect = img.getBoundingClientRect();
+    const textRect = heading.getBoundingClientRect();
+    // Compared horizontally, not vertically: in a two-column grid the text column is taller
+    // than the image, so "do their vertical ranges overlap" answers yes for both layouts
+    // depending on which block you pick. Columns share a horizontal band only when stacked.
+    return Math.min(imgRect.right, textRect.right) - Math.max(imgRect.left, textRect.left) > 0;
+  });
+  expect(stacked, 'the image should sit below the text, not beside it').toBe(true);
+});
+
+test('the Werkproces steps are centred on a short viewport', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'mobile-landscape', 'short-viewport behaviour');
+  await page.goto('/');
+  const offset = await page.locator('#how-it-works').evaluate((section) => {
+    const rect = section.getBoundingClientRect();
+    const badges = [...section.querySelectorAll('div')]
+      .filter((d) => /^\d\d$/.test(d.textContent?.trim() ?? ''))
+      .map((d) => d.getBoundingClientRect());
+    const titles = [...section.querySelectorAll('h3')].map((h) => h.getBoundingClientRect());
+    if (!badges.length || !titles.length) return null;
+    const left = Math.min(...badges.map((b) => b.left));
+    const right = Math.max(...titles.map((t) => t.right));
+    return Math.abs((left + right) / 2 - (rect.left + rect.right) / 2);
+  });
+  // Was ~58px off: the content column is capped at 500px but the group around it was 700px
+  // wide, so `margin: 0 auto` centred a container whose content sat against its left edge.
+  expect(offset, 'step group is not centred in its section').toBeLessThanOrEqual(2);
+});
+
+test('the header logo returns to its resting size after a press', async ({ page }) => {
+  await page.goto('/');
+  const logo = page.locator('nav img[alt="Qalor Logo"]');
+  await logo.click();
+  // The press animation scales to 1.3 and back. It used to never come back: the reset ran in
+  // a setTimeout that read `e.currentTarget`, which React has already cleared by then, so it
+  // threw and the logo stayed enlarged. A mouse hid this — onMouseLeave reset the scale on
+  // the way out — so it only showed up on a phone. The page-error fixture catches the throw;
+  // this catches the visible symptom, and neither is any use without a test that actually
+  // presses the logo.
+  await expect
+    .poll(() => logo.evaluate((el) => (el as HTMLElement).style.transform), { timeout: 3000 })
+    .toBe('scale(1)');
 });

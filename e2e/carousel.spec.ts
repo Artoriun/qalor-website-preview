@@ -1,4 +1,5 @@
-import { expect, type Page, test } from '@playwright/test';
+import type { Page } from '@playwright/test';
+import { expect, test } from './fixtures';
 
 /**
  * The shared carousel (packages/web/src/components/Carousel/Carousel.tsx), exercised through
@@ -18,13 +19,23 @@ async function translateX(page: Page) {
   return Number.parseFloat(matrix.split(',')[4]);
 }
 
-/** Stops autoplay so a measurement can't be overtaken by the timer mid-assertion. */
-async function pause(page: Page) {
-  await page
-    .getByRole('region', { name: 'Projecten' })
-    .getByRole('button', { name: /pauzeren/i })
-    .click();
+/**
+ * Toggles the carousel's play/pause by keyboard rather than by clicking.
+ *
+ * Deliberate: clicking moves the pointer onto the carousel, and hovering pauses it
+ * independently of the button (WCAG 2.2.2). Any test about whether the *button* works then
+ * has to get the pointer off again — which is impossible at a 915x412 viewport, where the
+ * section is taller than the screen and no point is outside it. The button sits outside the
+ * frame, and only the frame pauses on focus, so keyboard activation touches neither state.
+ */
+async function toggleAutoplay(page: Page, name: RegExp) {
+  const button = page.getByRole('region', { name: 'Projecten' }).getByRole('button', { name });
+  await button.focus();
+  await button.press('Enter');
 }
+
+const pause = (page: Page) => toggleAutoplay(page, /pauzeren/i);
+const resume = (page: Page) => toggleAutoplay(page, /doorgaan/i);
 
 async function drag(page: Page, dx: number) {
   const box = await page.locator(FRAME).boundingBox();
@@ -83,14 +94,7 @@ test('the pause button stops the carousel advancing', async ({ page }) => {
 
   // And pressing it again resumes — otherwise this test would still pass on a carousel that
   // simply never advanced at all.
-  await page
-    .getByRole('region', { name: 'Projecten' })
-    .getByRole('button', { name: /doorgaan/i })
-    .click();
-  // Move the pointer off the carousel first: hovering pauses it (WCAG 2.2.2 again), so
-  // leaving the mouse where the button was would keep it paused and this assertion would
-  // fail for the wrong reason.
-  await page.mouse.move(0, 0);
+  await resume(page);
   await page.waitForTimeout(6500);
   expect(await translateX(page)).not.toBeCloseTo(before, 0);
 });
@@ -119,34 +123,4 @@ test('a press that wanders but never commits still counts as a click', async ({ 
   await drag(page, -20);
   await page.waitForTimeout(400);
   expect(await page.locator(FRAME).getAttribute('data-clicks')).toBe('1');
-});
-
-test.describe('on a touch device', () => {
-  // Only the touch-related context options, not a whole device preset: a preset also carries
-  // defaultBrowserType, which Playwright refuses to change inside a describe. isMobile is
-  // what flips the emulated pointer to coarse, which is what lib/pdf.ts reads.
-  test.use({ hasTouch: true, isMobile: true, viewport: { width: 412, height: 915 } });
-
-  test('the CV opens directly instead of in an embedded viewer', async ({ page, context }) => {
-    // Chrome on Android will not render a PDF inside an iframe — it replaces the frame with
-    // its own "Open" prompt — so the modal is deliberately skipped there and the file is
-    // handed to the browser instead. See canEmbedPdf() in lib/pdf.ts.
-    await page.goto('/');
-    await page.locator('#team .carousel-frame').scrollIntoViewIfNeeded();
-    await page
-      .getByRole('region', { name: 'Teamleden' })
-      .getByRole('button', { name: /pauzeren/i })
-      .click();
-    await page.waitForTimeout(700);
-
-    const cv = page.locator('#team .carousel-slide:not([inert]) .team-cv-button').first();
-    // A real link, so it works even with JavaScript mid-flight.
-    await expect(cv).toHaveAttribute('href', /\/documents\/.*\.pdf$/);
-
-    const popup = context.waitForEvent('page', { timeout: 5000 }).catch(() => null);
-    await cv.click({ force: true });
-    await page.waitForTimeout(800);
-    expect(await page.locator('.pdf-modal-container').count()).toBe(0);
-    expect(await popup).not.toBeNull();
-  });
 });
