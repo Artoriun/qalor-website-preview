@@ -199,7 +199,9 @@ if (!template.includes('<div id="root"></div>')) {
 // directly). The file is small (a few KB gzipped), so inlining it is strictly cheaper here.
 const cssLinkMatch = template.match(/<link rel="stylesheet"[^>]*href="([^"]+\.css)"[^>]*>/);
 if (cssLinkMatch) {
-  const cssPath = join(DIST, cssLinkMatch[1].replace(/^\//, ''));
+  // href is base-prefixed ('/qalor-website-preview/assets/…' on the preview build), but the
+  // file on disk sits at dist/assets/… — strip the base, not just the leading slash.
+  const cssPath = join(DIST, cssLinkMatch[1].replace(BASE, '').replace(/^\//, ''));
   const css = readFileSync(cssPath, 'utf8');
   template = template.replace(cssLinkMatch[0], `<style>${css}</style>`);
 }
