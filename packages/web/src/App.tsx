@@ -39,10 +39,9 @@ const servicePage =
         return window.location.pathname === path || window.location.pathname === `${path}/`;
       });
 
-// Nothing code-split anymore at this level. Team used to be — it pulled in
-// @react-pdf-viewer/core (117KB gzipped) — but that dependency is only actually needed
-// once someone opens a CV, not on every page load, so it moved to its own lazy chunk
-// inside Team itself (see TeamPdfModal.tsx). Without it, Team's own code is as cheap as
+// Nothing code-split anymore at this level. Team used to be — it pulled in a PDF viewer
+// library, since removed in favour of the browser's own (see TeamPdfModal.tsx) — and what
+// little is left is lazy-loaded inside Team itself. Team's own code is as cheap as
 // About/WorkProcess/Projects/Footer, and being eager here avoids the same
 // Suspense-fallback CLS those already had fixed for them (the "Laden..." placeholder is a
 // very different height from the real section that replaces it).

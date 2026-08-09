@@ -3,8 +3,9 @@ import qalorLogoImg from '../../assets/images/figures/qalor logo.png';
 import { useContent } from '../../context/ContentContext';
 import { optimizeUrl } from '../../lib/images';
 
-// See TeamPdfModal.tsx's own comment: @react-pdf-viewer/core only loads once someone
-// actually opens a CV, not on every page load.
+// Only loaded once someone actually opens a CV. Far less critical than it was when this
+// pulled in a PDF library (see TeamPdfModal.tsx), but the modal is still only needed on
+// click.
 const TeamPdfModal = lazy(() => import('./TeamPdfModal'));
 
 const AUTOPLAY_MS = 3000;
@@ -268,9 +269,8 @@ const Team = () => {
   return (
     <>
       {showPDF && (
-        // Immediate backdrop while the modal's own chunk (and @react-pdf-viewer/core with
-        // it) is still being fetched, so the click has instant visual feedback instead of
-        // nothing happening for the first couple hundred ms.
+        // Immediate backdrop while the modal's own chunk is still being fetched, so the
+        // click has instant visual feedback instead of nothing happening.
         <Suspense
           fallback={
             <div
