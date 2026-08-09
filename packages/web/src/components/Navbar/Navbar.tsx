@@ -79,17 +79,20 @@ const Navbar = () => {
     setIsMenuOpen(false); // Close mobile menu after clicking
   };
 
+  // `e.currentTarget` is captured into a local before any setTimeout below. React clears
+  // currentTarget once the handler returns, so reading it inside a timer gets null and the
+  // callback throws — which is why the logo's click animation grew it and never shrank it
+  // back on a phone. (On a mouse it was masked: onMouseLeave reset the scale, and a touch
+  // device never fires that.)
   const handleNavClick = (elementId: string) => (e: React.MouseEvent<HTMLButtonElement>) => {
-    // Add clicked class for animation
-    e.currentTarget.classList.add('clicked');
+    const btn = e.currentTarget;
+    btn.classList.add('clicked');
     setTimeout(() => {
-      e.currentTarget.classList.remove('clicked');
+      btn.classList.remove('clicked');
       // On mobile, force remove any hover state after animation
       if ('ontouchstart' in window) {
-        e.currentTarget.classList.add('no-hover');
-        setTimeout(() => {
-          e.currentTarget.classList.remove('no-hover');
-        }, 100);
+        btn.classList.add('no-hover');
+        setTimeout(() => btn.classList.remove('no-hover'), 100);
       }
     }, 200);
     smoothScrollTo(elementId);
@@ -97,9 +100,8 @@ const Navbar = () => {
 
   const handleTouchEnd = (e: React.TouchEvent<HTMLButtonElement>) => {
     // Blur to remove focus state on mobile
-    setTimeout(() => {
-      e.currentTarget.blur();
-    }, 50);
+    const btn = e.currentTarget;
+    setTimeout(() => btn.blur(), 50);
   };
 
   return (
@@ -127,12 +129,13 @@ const Navbar = () => {
             }}
             onClick={(e) => {
               // Create click animation - scale up momentarily
-              e.currentTarget.style.transition = 'transform 0.15s ease';
-              e.currentTarget.style.transform = 'scale(1.3)';
+              const logo = e.currentTarget;
+              logo.style.transition = 'transform 0.15s ease';
+              logo.style.transform = 'scale(1.3)';
 
               setTimeout(() => {
-                e.currentTarget.style.transition = 'transform 0.3s ease';
-                e.currentTarget.style.transform = 'scale(1)';
+                logo.style.transition = 'transform 0.3s ease';
+                logo.style.transform = 'scale(1)';
               }, 150);
 
               if (window.location.pathname !== import.meta.env.BASE_URL) {
