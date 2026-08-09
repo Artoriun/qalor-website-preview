@@ -288,13 +288,17 @@ export function Carousel<T>({
       onPointerLeave={(e) => e.pointerType === 'mouse' && setHovered(false)}
       onKeyDown={onKeyDown}
     >
+      {/* biome-ignore lint/a11y/useSemanticElements: role="group" below has no native
+          equivalent for a slide viewport — see the note by that attribute. */}
       <div
         ref={frameRef}
         // Focusable so the arrow-key handling on the section above is actually reachable:
         // without a tab stop here, arrows only work once focus happens to be on one of the
         // buttons below, which is not something a keyboard user can discover. The prev/next
         // buttons remain the primary control; this makes the shortcut real rather than
-        // theoretical.
+        // theoretical. The ARIA carousel pattern puts the tab stop on the slides container
+        // exactly like this; the rule below only knows that a div is not natively focusable.
+        // biome-ignore lint/a11y/noNoninteractiveTabindex: deliberate tab stop, see above
         tabIndex={0}
         // Focus pauses only within the frame — the slides themselves — not on the controls
         // below. Focusing the play button is an explicit request to resume; if that also
@@ -304,6 +308,9 @@ export function Carousel<T>({
         onBlur={(e) => {
           if (!e.currentTarget.contains(e.relatedTarget as Node)) setFocused(false);
         }}
+        // No native element carries this meaning — <fieldset> is the closest semantic match
+        // and is for form controls, not a slide viewport. `group` plus a label is what the
+        // ARIA carousel pattern specifies.
         role="group"
         aria-label="Sleep of gebruik de pijltjestoetsen om te bladeren"
         className={`carousel-frame${isDragging ? ' is-dragging' : ''}`}
@@ -321,8 +328,8 @@ export function Carousel<T>({
         // on a phone. Resolving the slide from where the press started works whether or not
         // capture was involved. A click on something interactive inside a slide (the CV
         // link) stops propagation and never reaches this.
-        // biome-ignore lint/a11y/useKeyWithClickEvents: mouse convenience only; the real
-        // keyboard path is the CV link inside the card, and the buttons below.
+        // The keyboard path is the CV link inside the card and the buttons below; this
+        // handler is a mouse convenience on top of them.
         onClick={() => {
           if (isDraggingRef.current) return;
           const item = pressedItemRef.current;
@@ -353,6 +360,10 @@ export function Carousel<T>({
             const isDuplicate = i < count || i >= count * 2;
             return (
               <div
+                // `extended` is three fixed, never-reordered copies of `items`, so the index
+                // is as stable an identity here as the item's own key — which repeats three
+                // times and cannot be the key on its own.
+                // biome-ignore lint/suspicious/noArrayIndexKey: see comment above
                 key={`${itemKey(item, i % count)}-${i}`}
                 className="carousel-slide"
                 data-idx={i}
