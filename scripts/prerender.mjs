@@ -103,11 +103,23 @@ async function loadContent() {
 const content = await loadContent();
 
 // ---- serve the built app ----------------------------------------------------
+// detached, so the whole process group can be killed rather than just the npx wrapper.
+// `npx` spawns vite as a *child*: killing npx alone can leave vite holding the port, which
+// is invisible until something runs this script twice in one job — as CI now does, once for
+// the domain-root build and once for the subpath one. The second run then fails --strictPort
+// and reports an empty capture, which points nowhere near the real cause.
 const server = spawn('npx', ['vite', 'preview', '--port', String(PORT), '--strictPort'], {
   cwd: new URL('../packages/web/', import.meta.url).pathname,
   stdio: 'ignore',
+  detached: true,
 });
-const stop = () => server.kill();
+const stop = () => {
+  try {
+    process.kill(-server.pid, 'SIGTERM');
+  } catch {
+    // Already gone, or never started.
+  }
+};
 process.on('exit', stop);
 process.on('SIGINT', () => {
   stop();
@@ -119,12 +131,26 @@ process.on('SIGINT', () => {
 const BASE = process.env.VITE_BASE ?? '/';
 const origin = `http://localhost:${PORT}`;
 const appUrl = `${origin}${BASE}`;
+let up = false;
 for (let i = 0; i < 60; i++) {
   try {
     const r = await fetch(appUrl);
-    if (r.ok) break;
+    if (r.ok) {
+      up = true;
+      break;
+    }
   } catch {}
   await new Promise((r) => setTimeout(r, 500));
+}
+// Said out loud rather than left to surface as "captured 0 chars of text", which reads like
+// a broken app when it actually means nothing was ever served.
+if (!up) {
+  console.error(
+    `✗ the preview server never came up at ${appUrl} — port ${PORT} may still be held by a` +
+      ' previous run',
+  );
+  stop();
+  process.exit(1);
 }
 
 // ---- render -------------------------------------------------------------------
