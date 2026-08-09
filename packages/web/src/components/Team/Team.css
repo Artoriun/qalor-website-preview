@@ -110,6 +110,9 @@
 /* Fill plus its own text, so this pair is theme-invariant: black on white inside the card,
    with the brand orange only on the arrow badge. */
 .team-cv-button {
+  /* An <a>, so it needs the type resets a <button> gave for free. */
+  text-decoration: none;
+  white-space: nowrap;
   display: inline-flex;
   align-items: center;
   gap: 0.2rem;

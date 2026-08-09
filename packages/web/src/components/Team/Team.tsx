@@ -3,6 +3,7 @@ import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import qalorLogoImg from '../../assets/images/figures/qalor logo.png';
 import { useContent } from '../../context/ContentContext';
 import { optimizeUrl } from '../../lib/images';
+import { canEmbedPdf, withBase } from '../../lib/pdf';
 import { Carousel } from '../Carousel/Carousel';
 import './Team.css';
 
@@ -21,7 +22,9 @@ const TeamCard = ({ member, onOpenCv }: { member: Slide; onOpenCv: (m: Slide) =>
     // No background: the logo PNG is RGBA, so it sits on whatever is behind it in either
     // theme. It used to be forced onto a white plate, which read as a white card floating
     // in the middle of the dark-mode carousel.
-    return <img className="team-card team-card-logo" src={qalorLogoImg} alt="Qalor" />;
+    return (
+      <img className="team-card team-card-logo" src={qalorLogoImg} alt="Qalor" draggable={false} />
+    );
   }
 
   return (
@@ -40,19 +43,29 @@ const TeamCard = ({ member, onOpenCv }: { member: Slide; onOpenCv: (m: Slide) =>
         <div className="team-card-meta">
           <p>{member.description}</p>
           {member.pdfPath && (
-            <button
-              type="button"
+            // A real link, not a button: the CV is a document, and on a browser that won't
+            // embed a PDF this needs to behave like an ordinary link to one — open it, in
+            // that browser's own viewer. Where the modal does work, the click is intercepted
+            // below. Either way "open in a new tab" and "copy link" do the sensible thing.
+            <a
               className="team-cv-button"
+              href={withBase(member.pdfPath)}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={`CV van ${member.name}`}
               onClick={(e) => {
                 e.stopPropagation();
-                onOpenCv(member);
+                if (canEmbedPdf()) {
+                  e.preventDefault();
+                  onOpenCv(member);
+                }
               }}
             >
               CV
               <span className="team-cv-arrow" aria-hidden="true">
                 →
               </span>
-            </button>
+            </a>
           )}
         </div>
       </div>
@@ -89,7 +102,11 @@ const Team = () => {
   }, [openCv]);
 
   const openMemberCv = (m: Slide) => {
-    if (!m.isImage && m.pdfPath) setOpenCv(m.pdfPath);
+    if (m.isImage || !m.pdfPath) return;
+    // Same split as the CV link above: embed it where that works, otherwise hand the file to
+    // the browser rather than showing a modal that would render an empty grey panel.
+    if (canEmbedPdf()) setOpenCv(m.pdfPath);
+    else window.open(withBase(m.pdfPath), '_blank', 'noopener,noreferrer');
   };
 
   return (

@@ -17,8 +17,11 @@ const TRANSITION_MS = 500;
 // physical distance on a phone as a pointer drag does on a wide desktop.
 const DRAG_THRESHOLD = 50;
 // Movement, more horizontal than vertical, before a pointer press counts as a drag rather
-// than a tap or a vertical page scroll.
-const DRAG_INTENT = 8;
+// than a tap or a vertical page scroll. Higher for touch than for a mouse: a finger tap on
+// a phone routinely wanders several pixels, and at the mouse threshold those taps were
+// being read as drags.
+const DRAG_INTENT_MOUSE = 8;
+const DRAG_INTENT_TOUCH = 16;
 const MAX_SLIDE_WIDTH = 400;
 
 function reducedMotionPreferred() {
@@ -138,6 +141,9 @@ export function Carousel<T>({
   const frameRef = useRef<HTMLDivElement>(null);
   const isDraggingRef = useRef(false);
   const dragStartRef = useRef<{ x: number; y: number } | null>(null);
+  // Which slide the press started on. Needed because the click has to be handled on the
+  // frame rather than per slide — see the frame's onClick below.
+  const pressedItemRef = useRef<T | null>(null);
 
   const index = count > 0 ? ((trackIndex % count) + count) % count : 0;
 
@@ -188,7 +194,13 @@ export function Carousel<T>({
   function onPointerDown(e: ReactPointerEvent<HTMLDivElement>) {
     if (count < 2) return;
     if ((e.target as HTMLElement).closest('.carousel-btn')) return;
+    // A new press is always a fresh gesture: any synthetic click left over from a previous
+    // drag has already fired by now, so nothing is left to swallow.
+    isDraggingRef.current = false;
     dragStartRef.current = { x: e.clientX, y: e.clientY };
+    const slide = (e.target as HTMLElement).closest<HTMLElement>('.carousel-slide');
+    const idx = slide ? Number(slide.dataset.idx) : Number.NaN;
+    pressedItemRef.current = Number.isNaN(idx) ? null : extended[idx];
   }
 
   function onPointerMove(e: ReactPointerEvent<HTMLDivElement>) {
@@ -200,13 +212,19 @@ export function Carousel<T>({
     if (!isDraggingRef.current) {
       // Vertical intent wins: this must not hijack a page scroll that happens to start on
       // the carousel.
-      if (Math.abs(dx) < DRAG_INTENT || Math.abs(dx) < Math.abs(dy)) return;
+      const intent = e.pointerType === 'mouse' ? DRAG_INTENT_MOUSE : DRAG_INTENT_TOUCH;
+      if (Math.abs(dx) < intent || Math.abs(dx) < Math.abs(dy)) return;
       isDraggingRef.current = true;
       setIsDragging(true);
       setAnimate(false);
       e.currentTarget.setPointerCapture(e.pointerId);
     }
-    e.preventDefault();
+    // Deliberately no preventDefault() here. Calling it on a pointermove suppresses the
+    // compatibility mouse events, and with them the click — so *any* press that wandered
+    // past the intent threshold produced no click at all, which is what made a slide need
+    // pressing twice on a phone to open a CV. Scrolling and text selection are already
+    // handled declaratively by `touch-action: pan-y` and `user-select: none` on the frame,
+    // so nothing here needs the default suppressed.
     setDragPx(damp(dx, frameRef.current?.offsetWidth || 1));
   }
 
@@ -214,18 +232,33 @@ export function Carousel<T>({
     const start = dragStartRef.current;
     dragStartRef.current = null;
     if (!isDraggingRef.current || !start) return;
-    // Cleared shortly after release rather than immediately: the pointerup that ends a drag
-    // still fires a synthetic click on the slide underneath a moment later, and
-    // handleClick reads this ref to swallow that one click without affecting real taps.
-    setTimeout(() => {
-      isDraggingRef.current = false;
-    }, 100);
 
     const dx = e.clientX - start.x;
+    const committed = Math.abs(dx) > DRAG_THRESHOLD;
+
+    // Only swallow the click when the gesture actually moved the carousel. A press that
+    // engaged the drag but never reached the commit threshold is, as far as the visitor is
+    // concerned, a tap — and swallowing that one was why a slide had to be pressed twice on
+    // a phone to open anything: the first press wandered past the intent threshold, so its
+    // click was discarded, and only a stiller second press got through.
+    if (committed) {
+      // Cleared shortly after release rather than immediately: the pointerup that ends a
+      // drag still fires a synthetic click on the slide underneath a moment later, and the
+      // slide's handler reads this ref to swallow that one click.
+      setTimeout(() => {
+        isDraggingRef.current = false;
+      }, 100);
+    } else {
+      isDraggingRef.current = false;
+    }
+
+    if (e.currentTarget.hasPointerCapture?.(e.pointerId)) {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    }
     setIsDragging(false);
     setAnimate(true);
     setDragPx(0);
-    if (Math.abs(dx) > DRAG_THRESHOLD) setTrackIndex((i) => i + (dx < 0 ? 1 : -1));
+    if (committed) setTrackIndex((i) => i + (dx < 0 ? 1 : -1));
   }
 
   function onKeyDown(e: ReactKeyboardEvent<HTMLElement>) {
@@ -282,6 +315,19 @@ export function Carousel<T>({
         onPointerMove={onPointerMove}
         onPointerUp={onPointerEnd}
         onPointerCancel={onPointerEnd}
+        // Handled here rather than on each slide: once a drag engages, setPointerCapture
+        // retargets the eventual click to this frame, so a per-slide handler simply never
+        // ran after any press that wandered — which is what made a card need pressing twice
+        // on a phone. Resolving the slide from where the press started works whether or not
+        // capture was involved. A click on something interactive inside a slide (the CV
+        // link) stops propagation and never reaches this.
+        // biome-ignore lint/a11y/useKeyWithClickEvents: mouse convenience only; the real
+        // keyboard path is the CV link inside the card, and the buttons below.
+        onClick={() => {
+          if (isDraggingRef.current) return;
+          const item = pressedItemRef.current;
+          if (item !== null) onItemClick?.(item);
+        }}
       >
         <div
           className="carousel-track"
@@ -309,18 +355,9 @@ export function Carousel<T>({
               <div
                 key={`${itemKey(item, i % count)}-${i}`}
                 className="carousel-slide"
+                data-idx={i}
                 style={{ width: `${step}px` }}
                 inert={isDuplicate}
-                // Clicking anywhere on a slide is a mouse convenience only. It is not the
-                // accessible path and isn't meant to be: the slide is a plain div, and
-                // whatever renderItem puts inside carries the real semantics — Team's cards
-                // contain a genuine "CV" button, which is what a keyboard or screen-reader
-                // user activates. Making the slide itself a <button> would nest that button
-                // inside another, which is invalid.
-                // biome-ignore lint/a11y/useKeyWithClickEvents: see comment above
-                onClick={() => {
-                  if (!isDraggingRef.current) onItemClick?.(item);
-                }}
               >
                 {renderItem(item)}
               </div>

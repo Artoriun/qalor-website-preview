@@ -1,13 +1,5 @@
+import { withBase } from '../../lib/pdf';
 import './TeamPdfModal.css';
-
-// packages/shared stores CV paths as root-relative ('/documents/...') since it can't depend
-// on Vite's import.meta.env (that file is also imported directly by Node in
-// scripts/prerender.mjs, outside Vite entirely). Prefixing with BASE_URL here, where Vite's
-// env is actually available, is what makes these resolve when the site isn't served from the
-// domain root (e.g. a GitHub Pages project site under a subpath). An admin-uploaded CV is an
-// absolute Cloudinary URL instead, which must be left alone.
-const withBase = (path: string) =>
-  /^https?:\/\//.test(path) ? path : `${import.meta.env.BASE_URL.replace(/\/$/, '')}${path}`;
 
 /**
  * The CV modal, rendered by the browser's own PDF viewer via <iframe>.
