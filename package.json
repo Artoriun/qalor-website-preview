@@ -16,6 +16,8 @@
     "preview": "npm run preview --workspace=packages/web",
     "test:api": "node --import tsx --test \"packages/api/src/**/*.test.ts\"",
     "test:e2e": "playwright test",
+    "test:e2e:dist": "E2E_TARGET=dist playwright test",
+    "test:e2e:subpath": "E2E_TARGET=subpath playwright test",
     "test:e2e:ui": "playwright test --ui",
     "prerender": "node scripts/prerender.mjs",
     "check:budgets": "node scripts/check-budgets.mjs",

@@ -22,6 +22,17 @@ const WEB = new URL('../packages/web/', import.meta.url).pathname;
 const SHARED = new URL('../packages/shared/', import.meta.url).pathname;
 const BUDGET_GZIP = { '.js': true, '.css': true, initial: 90 * 1024 };
 
+// Lazy chunks used to be printed as "(not budgeted)", which meant nobody saw the CV modal
+// pull in a PDF viewer and its worker — 1.54MB transferred on click, to display a 102KB
+// document. It was invisible precisely because it was off the initial payload.
+//
+// The ceiling is per chunk, not a total: these are alternatives, not a bundle, so what
+// matters is the cost of the one interaction a visitor actually performs. 50KB is
+// comfortably above the current largest (3.2KB) and far below what went unnoticed. The
+// number is not sacred — the point is that crossing it becomes a decision someone makes
+// deliberately rather than something nobody is told about.
+const BUDGET_LAZY_GZIP = 50 * 1024;
+
 let failed = false;
 const fail = (msg) => {
   console.error(`✗ ${msg}`);
@@ -121,9 +132,12 @@ if (initial > BUDGET_GZIP.initial) {
   console.log(`✓ initial payload: ${kb(initial)} gzipped (budget ${kb(BUDGET_GZIP.initial)})`);
 }
 for (const name of lazy) {
-  console.log(
-    `  lazy  ${name}: ${kb(gzipSync(readFileSync(join(assets, name))).length)} gzipped (not budgeted)`,
-  );
+  const size = gzipSync(readFileSync(join(assets, name))).length;
+  if (size > BUDGET_LAZY_GZIP) {
+    fail(`lazy chunk ${name} is ${kb(size)} gzipped, over the ${kb(BUDGET_LAZY_GZIP)} budget`);
+  } else {
+    console.log(`  lazy  ${name}: ${kb(size)} gzipped (budget ${kb(BUDGET_LAZY_GZIP)})`);
+  }
 }
 
 process.exit(failed ? 1 : 0);

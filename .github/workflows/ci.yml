@@ -93,8 +93,32 @@ jobs:
       - name: Run layout and accessibility tests
         run: npm run test:e2e
 
-      # Accessibility, SEO and best-practices against the built, prerendered output.
+      # Everything below runs against the built, prerendered output rather than the dev
+      # server. That distinction is the point: prerendering is what produced a Hero that
+      # painted a desktop layout and snapped to mobile after hydration, and the dev server
+      # has no prerendered HTML at all — no test running against it could have caught that.
+      # `prerender` gates itself on the same thing (see its first-paint parity check).
       - name: Build and prerender for audit
+        run: npm run build && npm run prerender
+
+      - name: Run the suite against the built output
+        run: npm run test:e2e:dist
+
+      # The GitHub Pages preview is served from a project subpath, and three bugs existed
+      # only in that variant — a 404ing /admin, a crash inlining the stylesheet, and a link
+      # that navigated off the site. None were reachable without actually producing it.
+      - name: Build and prerender the subpath variant
+        run: npm run build && npm run prerender
+        env:
+          VITE_BASE: /qalor-website-preview/
+          NOINDEX: '1'
+
+      - name: Check the subpath build
+        run: npm run test:e2e:subpath
+
+      # Rebuild at the domain root: the subpath build above overwrote dist, and Lighthouse
+      # must audit what actually ships to qalor.nl.
+      - name: Rebuild for audit
         run: npm run build && npm run prerender
 
       - name: Lighthouse

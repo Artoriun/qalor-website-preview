@@ -376,6 +376,64 @@ if (mismatches.length) {
   failed = true;
 }
 
+// ---- first-paint vs hydrated layout gate ---------------------------------------
+/**
+ * The hydration gate above only catches React *errors* (418/423/425). A component that
+ * decides its layout from `window.innerWidth` throws none of those: React silently patches
+ * the styles, the page "hydrates cleanly", and a phone still visibly jumps.
+ *
+ * That shipped. The Hero read innerWidth during render, so the desktop layout was baked into
+ * the prerendered HTML and a phone painted a 4rem heading in a two-column grid before
+ * snapping to 3rem in one column — measured at 64px -> 48px, with everything below moving up
+ * 145px.
+ *
+ * So: load each route at a mobile viewport twice — once with JavaScript disabled, which is
+ * what actually paints first, and once normally — and require the h1 to be laid out
+ * identically. Deliberately narrow: a whole-page geometry diff would trip over Particles'
+ * canvas and animation timing, whereas this encodes one precise rule — the prerendered markup
+ * must not commit to a layout the client will disagree with.
+ */
+const PARITY_VIEWPORT = { width: 412, height: 915 };
+
+async function measureH1(url, javaScriptEnabled) {
+  const ctx = await browser.newContext({ viewport: PARITY_VIEWPORT, javaScriptEnabled });
+  const measurePage = await ctx.newPage();
+  await measurePage.goto(url, { waitUntil: 'load' });
+  // Let hydration and the Hero's load animation settle before measuring the JS pass.
+  if (javaScriptEnabled) await measurePage.waitForTimeout(900);
+  const measurement = await measurePage.evaluate(() => {
+    const h1 = document.querySelector('h1');
+    if (!h1) return null;
+    const rect = h1.getBoundingClientRect();
+    return {
+      fontSize: getComputedStyle(h1).fontSize,
+      width: Math.round(rect.width),
+      height: Math.round(rect.height),
+    };
+  });
+  await ctx.close();
+  return measurement;
+}
+
+for (const route of ROUTES) {
+  const url = `${appUrl.replace(/\/$/, '')}${route.path}`;
+  const firstPaint = await measureH1(url, false);
+  const hydrated = await measureH1(url, true);
+  if (!firstPaint || !hydrated) continue;
+  const differs = ['fontSize', 'width', 'height'].filter((k) => firstPaint[k] !== hydrated[k]);
+  if (differs.length) {
+    console.error(
+      `✗ ${route.path} lays out differently once hydrated — the prerendered HTML commits to a` +
+        ' layout the client disagrees with, so a visitor sees it jump. Decide it in CSS' +
+        ' (a media query) rather than from window.innerWidth.',
+    );
+    for (const k of differs) {
+      console.error(`    h1 ${k}: first paint ${firstPaint[k]} -> hydrated ${hydrated[k]}`);
+    }
+    failed = true;
+  }
+}
+
 await browser.close();
 stop();
 
