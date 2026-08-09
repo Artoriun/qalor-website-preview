@@ -102,3 +102,51 @@ test('the arrow keys move the carousel', async ({ page }) => {
   await page.waitForTimeout(700);
   expect(await translateX(page)).toBeLessThan(before);
 });
+
+test('a press that wanders but never commits still counts as a click', async ({ page }) => {
+  // The gesture that broke opening a CV on a phone: a press that moves past the drag-intent
+  // threshold but nowhere near the commit threshold. That is a tap as far as the visitor is
+  // concerned, and its click used to be swallowed along with a real drag's — so a slide had
+  // to be pressed twice. Exercised on the Projecten carousel via its own slide click, since
+  // the mechanism lives in the shared component.
+  await page.locator(FRAME).evaluate((el) => {
+    (el as HTMLElement).dataset.clicks = '0';
+    el.addEventListener('click', () => {
+      const n = Number((el as HTMLElement).dataset.clicks ?? '0');
+      (el as HTMLElement).dataset.clicks = String(n + 1);
+    });
+  });
+  await drag(page, -20);
+  await page.waitForTimeout(400);
+  expect(await page.locator(FRAME).getAttribute('data-clicks')).toBe('1');
+});
+
+test.describe('on a touch device', () => {
+  // Only the touch-related context options, not a whole device preset: a preset also carries
+  // defaultBrowserType, which Playwright refuses to change inside a describe. isMobile is
+  // what flips the emulated pointer to coarse, which is what lib/pdf.ts reads.
+  test.use({ hasTouch: true, isMobile: true, viewport: { width: 412, height: 915 } });
+
+  test('the CV opens directly instead of in an embedded viewer', async ({ page, context }) => {
+    // Chrome on Android will not render a PDF inside an iframe — it replaces the frame with
+    // its own "Open" prompt — so the modal is deliberately skipped there and the file is
+    // handed to the browser instead. See canEmbedPdf() in lib/pdf.ts.
+    await page.goto('/');
+    await page.locator('#team .carousel-frame').scrollIntoViewIfNeeded();
+    await page
+      .getByRole('region', { name: 'Teamleden' })
+      .getByRole('button', { name: /pauzeren/i })
+      .click();
+    await page.waitForTimeout(700);
+
+    const cv = page.locator('#team .carousel-slide:not([inert]) .team-cv-button').first();
+    // A real link, so it works even with JavaScript mid-flight.
+    await expect(cv).toHaveAttribute('href', /\/documents\/.*\.pdf$/);
+
+    const popup = context.waitForEvent('page', { timeout: 5000 }).catch(() => null);
+    await cv.click({ force: true });
+    await page.waitForTimeout(800);
+    expect(await page.locator('.pdf-modal-container').count()).toBe(0);
+    expect(await popup).not.toBeNull();
+  });
+});
