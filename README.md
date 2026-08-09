@@ -34,7 +34,9 @@ Lighthouse audit and a bundle budget — nothing publishes unless all of it pass
   resulting DOM back into that route's `index.html`, so a visitor's (or crawler's) first
   response is actual content, not a blank shell waiting on JavaScript.
 - Team and project carousels — auto-advancing, drag/swipe-enabled, infinite-wrap.
-- Team member CVs open in a modal PDF viewer (`@react-pdf-viewer/core`).
+- Team member CVs open in a modal rendered by the browser's own PDF viewer — an `<iframe>`,
+  no library. The previous `@react-pdf-viewer/core` + self-hosted pdf.js worker transferred
+  1.54MB to display a 102KB document; 1.09MB of that was the worker alone.
 - Below-the-fold sections (Team, About, Werkproces, Projecten, Footer) are
   `React.lazy()` + `Suspense` — only Hero/Navbar, the above-the-fold content, are in the
   initial bundle.
@@ -52,7 +54,6 @@ Lighthouse audit and a bundle budget — nothing publishes unless all of it pass
 | **Cloudinary** | Image hosting/transforms, plus admin-portal uploads |
 | **TurboRepo** + npm workspaces | Monorepo build orchestration |
 | **AOS** | Scroll-reveal on below-the-fold sections only — never on the Hero, see [Rendering & LCP](#rendering--lcp) |
-| **@react-pdf-viewer/core** | Team member CV modal |
 | **Biome** | Linting & formatting |
 | **Playwright** | Layout tests, the accessibility sweep, and the prerenderer |
 | **axe-core** | WCAG rules, run inside the Playwright suite |
@@ -79,7 +80,7 @@ packages/
 ├── api/                   # admin API: Express + Firestore + JWT auth, see ADMIN.md
 │   └── src/routes/        # auth.ts, content.ts (singleton + list section merge logic)
 └── web/                   # the Vite/React app
-    ├── public/            # PDF worker, team CVs, favicon, .htaccess (SPA 404 fallback)
+    ├── public/            # team CVs, favicon, .htaccess (SPA 404 fallback)
     └── src/
         ├── components/    # one folder per section, each reading from ContentContext
         ├── context/       # ContentContext.tsx — bundle/prerender/live-API content merge

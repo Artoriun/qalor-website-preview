@@ -156,8 +156,6 @@ export const TEAM_MEMBERS: TeamMember[] = [
   { id: 4, order: 3, isImage: true },
 ];
 
-export const PDF_WORKER_URL = '/pdfjs/pdf.worker.min.js';
-
 export const SITE_TITLE = 'Qalor';
 export const SITE_DESCRIPTION =
   'Qalor — energiedeskundigen voor warmtenetten: advies, ontwerp en realisatie van energie-efficiënte warmteoplossingen voor gebouwen en wijken.';

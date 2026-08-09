@@ -70,9 +70,17 @@ test('opening a team member CV and closing it with Escape works', async ({ page 
   await cvButton.waitFor({ state: 'visible', timeout: 15_000 });
   await cvButton.click();
 
-  // @react-pdf-viewer/core renders its canvas asynchronously; the modal container itself
-  // is the reliable thing to assert on rather than waiting on PDF.js internals.
+  // The PDF renders inside an <iframe>, handed to the browser's own viewer — which headless
+  // Chromium doesn't ship, so whether a page actually paints in there isn't observable from
+  // this suite and has to be checked on a real browser. What's worth asserting is the part
+  // this app controls: the modal opens, the iframe points at the right file, and the
+  // fallback link — the only route through on a browser that won't render a PDF inline, see
+  // TeamPdfModal.tsx — points at that same file rather than silently drifting from it.
   await expect(page.locator('.pdf-modal-container')).toBeVisible();
+  const frame = page.locator('iframe.pdf-modal-frame');
+  await expect(frame).toHaveAttribute('src', /\/documents\/.*\.pdf$/);
+  const src = await frame.getAttribute('src');
+  await expect(page.locator('.pdf-modal-open')).toHaveAttribute('href', src ?? '');
 
   await page.keyboard.press('Escape');
   await expect(page.locator('.pdf-modal-container')).toBeHidden();

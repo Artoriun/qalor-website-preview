@@ -1,0 +1,92 @@
+/* Replaces pdf-viewer-override.css, which existed to fight @react-pdf-viewer's own styles.
+   Nothing here overrides a library — the browser's PDF viewer is inside the iframe and
+   styles itself. */
+
+.pdf-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background-color: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.pdf-modal-container {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  max-width: 800px;
+  max-height: 90vh;
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--bg-page);
+}
+
+.pdf-modal-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.5rem 0.5rem 0.5rem 1rem;
+  /* --bg-page, not --bg-section: --accent-text-body on the link below is the tier tuned
+     against the page background (4.51:1 there). On --bg-section's slightly darker #f8f9fa
+     the same colour measures 4.27:1 and fails AA for small text — caught by an axe sweep
+     of this modal, not by looking at it. */
+  background: var(--bg-page);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.pdf-modal-hint {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--text-body);
+  min-width: 0;
+}
+
+/* -body, not -strong: this is small text, so it needs the 4.5:1 orange tier — same
+   reasoning as .service-eyebrow. */
+.pdf-modal-open {
+  color: var(--accent-text-body);
+  font-weight: 600;
+  text-decoration: underline;
+  white-space: nowrap;
+}
+
+.pdf-modal-open:hover,
+.pdf-modal-open:focus-visible {
+  text-decoration: underline;
+}
+
+.pdf-modal-close {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--accent-on-fill);
+  font-size: 24px;
+  font-weight: bold;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: Arial, sans-serif;
+}
+
+.pdf-modal-frame {
+  flex: 1;
+  width: 100%;
+  border: none;
+  /* The viewer inside paints its own (usually grey) background; this only shows in the
+     moment before it does, and while a browser that won't render it inline leaves it
+     blank. */
+  background: var(--bg-section);
+}
