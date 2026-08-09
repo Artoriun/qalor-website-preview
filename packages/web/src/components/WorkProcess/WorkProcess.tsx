@@ -47,6 +47,16 @@ const numberBadgeStyle = (
   zIndex: 3,
 });
 
+// The landscape step row is [badge column][gap][content], and the content is capped so the
+// line length stays readable on a short, wide screen. The container has to be exactly that
+// wide too: at any wider value the row can't fill it, and `margin: 0 auto` then centres a
+// container whose content sits against its left edge — which reads as the whole section
+// being off-centre, because it is.
+const LANDSCAPE_BADGE_COL = 60;
+const LANDSCAPE_ROW_GAP = 24; // 1.5rem
+const LANDSCAPE_CONTENT_MAX = 500;
+const LANDSCAPE_GROUP_MAX = LANDSCAPE_BADGE_COL + LANDSCAPE_ROW_GAP + LANDSCAPE_CONTENT_MAX;
+
 const WorkProcess = () => {
   const { content } = useContent();
   const { eyebrow, heading } = content.workProcessIntro;
@@ -146,7 +156,7 @@ const WorkProcess = () => {
             // edge), which put the line and the badges it should align with in
             // different coordinate spaces — a real misalignment on landscape phones.
             width: isLandscape && useMobileLayout ? '90%' : '100%',
-            maxWidth: isLandscape && useMobileLayout ? '700px' : 'none',
+            maxWidth: isLandscape && useMobileLayout ? `${LANDSCAPE_GROUP_MAX}px` : 'none',
             margin: isLandscape && useMobileLayout ? '0 auto' : '0',
           }}
         >
@@ -260,10 +270,10 @@ const WorkProcess = () => {
                     {/* Number on left */}
                     <div
                       style={{
-                        flex: '0 0 60px',
-                        minWidth: '60px',
-                        maxWidth: '60px',
-                        width: '60px',
+                        flex: `0 0 ${LANDSCAPE_BADGE_COL}px`,
+                        minWidth: `${LANDSCAPE_BADGE_COL}px`,
+                        maxWidth: `${LANDSCAPE_BADGE_COL}px`,
+                        width: `${LANDSCAPE_BADGE_COL}px`,
                         display: 'flex',
                         flexDirection: 'column',
                         alignItems: 'center',
@@ -285,7 +295,7 @@ const WorkProcess = () => {
                         display: 'flex',
                         flexDirection: 'column',
                         gap: '1.5rem',
-                        maxWidth: isLandscape ? '500px' : 'none',
+                        maxWidth: isLandscape ? `${LANDSCAPE_CONTENT_MAX}px` : 'none',
                       }}
                     >
                       <div>

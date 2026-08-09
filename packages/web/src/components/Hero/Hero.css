@@ -1,40 +1,256 @@
-/* Hero Component Styles */
+/* Hero Component Styles
+ *
+ * Everything responsive here is a media query rather than a JS `isMobile` flag, and that is
+ * load-bearing rather than tidiness. This section is prerendered at a desktop viewport (see
+ * scripts/prerender.mjs), so any layout decided in JS is baked into the HTML at *desktop*
+ * values: a phone painted a 4rem heading in a two-column grid, then React hydrated and
+ * snapped it to 3rem in a single column — measured at a 64px -> 48px jump with the content
+ * below moving up 145px. A media query is evaluated by the browser before first paint, at
+ * the real viewport, so there is nothing to correct afterwards.
+ */
 .hero {
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  min-height: 60vh;
+  height: auto;
+  padding: 100px 20px 80px;
+  background-color: var(--bg-hover);
+}
+
+/* Fades in on load, so the Hero arrives like the rest of the page instead of appearing
+   fully-formed the instant the HTML lands.
+ *
+ * Deliberately NOT AOS, which is banned from this section: AOS holds an element at
+ * opacity:0 until a scroll trigger fires, which on the LCP element means the one thing that
+ * should paint first may never paint at all until the visitor scrolls. A load-triggered
+ * animation is a different proposition — opacity is above zero within a frame, so the
+ * element counts as painted immediately and only the last of the fade happens afterwards.
+ * The LCP cost was measured, not assumed. */
+@keyframes hero-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.hero-panel {
+  animation: hero-in 0.5s ease-out both;
+  position: relative;
+  width: 100%;
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 60px 40px;
+  border-radius: 20px;
+  /* Full-brightness #FFA940/#F18825: everything on this panel is #2B1400 (warm espresso)
+     text and icons, not white, so nothing needs darkening to clear 4.5:1 — espresso clears
+     6.9:1+ on either stop. Theme-invariant for the same reason. */
+  background: linear-gradient(135deg, #ffa940, #f18825);
+}
+
+.hero-grid {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5rem;
+  align-items: center;
+}
+
+.hero-text {
+  position: relative;
+  z-index: 3;
+  text-align: left;
+}
+
+.hero-text h1 {
+  margin-bottom: 1rem;
+  font-size: 4rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: #2b1400;
+}
+
+.hero-text h2 {
+  margin-bottom: 2rem;
+  font-size: 2rem;
+  font-weight: 500;
+  color: #2b1400;
+}
+
+.hero-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-start;
+}
+
+.hero-contact-btn {
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 60vh;
-  background-color: var(--bg-hover);
-  padding-top: 100px !important;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 50px;
+  background: #fff;
+  color: #2b1400;
+  font-size: 1.2rem;
+  font-weight: 600;
+  cursor: pointer;
+  outline: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease;
+  -webkit-tap-highlight-color: transparent;
 }
 
-/* Mobile-specific adjustments */
+.hero-contact-btn:hover {
+  transform: translateY(-2px);
+}
+
+.hero-contact-arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background-color: #f18825;
+  color: #2b1400;
+  font-size: 18px;
+  font-weight: bold;
+}
+
+/* Was injected into <head> at runtime from a useEffect. Nothing here needs to be, and a
+   stylesheet can't arrive after first paint the way that did. */
+.wat-wij-doen-btn {
+  position: relative;
+  padding: 1rem 2rem 8px;
+  border: none;
+  border-radius: 50px;
+  background: transparent;
+  color: #2b1400;
+  font-size: 1.2rem;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.wat-wij-doen-btn::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #2b1400;
+  opacity: 0;
+  transform: translateX(-50%);
+  transition:
+    opacity 0.3s ease,
+    transform 0.2s ease;
+}
+
+.wat-wij-doen-btn:hover::after {
+  opacity: 1;
+}
+
+/* Touch devices: no hover dot, but the click animation below still runs. */
+@media (hover: none) {
+  .wat-wij-doen-btn:hover::after {
+    opacity: 0;
+  }
+}
+
+.wat-wij-doen-btn.clicked::after {
+  opacity: 1;
+  transform: translateX(-50%) scale(1.8);
+}
+
+.hero-image-wrap {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.hero-image-wrap img {
+  width: 100%;
+  height: 100%;
+  min-height: 400px;
+  object-fit: cover;
+  object-position: right center;
+  border-radius: 15px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
 @media (max-width: 768px) {
   .hero {
-    min-height: calc(100vh - 100px) !important;
-    padding-top: 80px !important;
-    margin-top: 10px !important;
+    min-height: calc(100vh - 100px);
+    padding: 80px 20px;
+    margin-top: 10px;
+  }
+
+  .hero-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 3rem;
+  }
+
+  .hero-text {
+    text-align: center;
+  }
+
+  .hero-text h1 {
+    font-size: 3rem;
+  }
+
+  .hero-text h2 {
+    font-size: 1.6rem;
+  }
+
+  .hero-actions {
+    justify-content: center;
+  }
+
+  .hero-contact-btn,
+  .wat-wij-doen-btn {
+    font-size: 1rem;
+  }
+
+  .wat-wij-doen-btn {
+    padding: 0.8rem 1.5rem 8px;
+  }
+
+  .hero-image-wrap {
+    width: 90%;
+    margin-top: 40px;
+  }
+
+  .hero-image-wrap img {
+    height: 300px;
+    min-height: 300px;
   }
 }
 
-/* Landscape mode adjustments for mobile */
 @media (max-width: 768px) and (orientation: landscape) {
   .hero {
-    padding-top: 100px !important;
-    margin-top: 15px !important;
+    padding-top: 100px;
+    margin-top: 15px;
   }
 }
 
-.animate-on-scroll {
-  opacity: 0;
-  transform: translateY(20px);
-  transition:
-    opacity 0.6s ease,
-    transform 0.6s ease;
-}
-
-.animate {
-  opacity: 1;
-  transform: translateY(0);
+/* No fade for anyone who has asked for less motion — the section still arrives, just
+   without the movement. */
+@media (prefers-reduced-motion: reduce) {
+  .hero-panel {
+    animation: none;
+  }
 }
