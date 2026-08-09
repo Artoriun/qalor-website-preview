@@ -397,15 +397,25 @@ const Team = () => {
                           src={member.imageUrl}
                           alt="Qalor"
                           style={{
+                            // No background: the logo PNG is RGBA, so it sits on whatever
+                            // is behind it in either theme. It used to be forced onto a
+                            // white plate, which read as a white card floating in the
+                            // middle of the dark-mode carousel.
+                            //
+                            // These were all `member.id === 4 ? … : …` ternaries — dead
+                            // branches, since this block only renders when
+                            // `member.isImage` and id 4 is the only such member. Worse,
+                            // isImage is admin-editable: flagging a second member as an
+                            // image would have taken the other branch and rendered it
+                            // cropped rather than contained, for no stated reason.
                             width: '100%',
-                            height: member.id === 4 ? '100%' : isMobile ? '300px' : '320px',
-                            objectFit: member.id === 4 ? 'contain' : 'cover',
+                            height: '100%',
+                            objectFit: 'contain',
                             borderRadius: '8px',
-                            background: member.id === 4 ? 'white' : undefined,
-                            maxWidth: member.id === 4 ? '350px' : undefined,
-                            maxHeight: member.id === 4 ? (isMobile ? '300px' : '320px') : undefined,
-                            margin: member.id === 4 ? '0 auto' : undefined,
-                            display: member.id === 4 ? 'block' : undefined,
+                            maxWidth: '350px',
+                            maxHeight: isMobile ? '300px' : '320px',
+                            margin: '0 auto',
+                            display: 'block',
                           }}
                         />
                       ) : (
