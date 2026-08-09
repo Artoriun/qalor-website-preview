@@ -8,17 +8,26 @@ const About = () => {
   const [isMobile, setIsMobile] = useState(false);
   const [isTablet, setIsTablet] = useState(false);
 
-  // Check for mobile and tablet screen sizes
+  // Width alone isn't enough to decide the layout. A phone held in landscape is around
+  // 915x412 — wide enough to pass for a tablet, so it used to get the side-by-side grid and
+  // a 380px-tall image inside a 412px-tall viewport, which left almost nothing of either
+  // column visible at once. A short viewport stacks regardless of how wide it is.
   useEffect(() => {
     const checkScreenSize = () => {
       const width = window.innerWidth;
-      setIsMobile(width <= 768);
-      setIsTablet(width > 768 && width <= 1024);
+      const short = window.innerHeight <= 500;
+      setIsMobile(width <= 768 || short);
+      setIsTablet(!short && width > 768 && width <= 1024);
     };
 
     checkScreenSize();
     window.addEventListener('resize', checkScreenSize);
-    return () => window.removeEventListener('resize', checkScreenSize);
+    // Rotating a phone doesn't always fire resize before the new dimensions settle.
+    window.addEventListener('orientationchange', checkScreenSize);
+    return () => {
+      window.removeEventListener('resize', checkScreenSize);
+      window.removeEventListener('orientationchange', checkScreenSize);
+    };
   }, []);
 
   const headingSize = isMobile ? '2rem' : isTablet ? '2.25rem' : '2.5rem';
