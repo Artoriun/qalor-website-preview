@@ -141,16 +141,32 @@ they're far enough down that this isn't a risk.
 
 ## Testing
 
-`npm run test:e2e` runs layout assertions (no horizontal overflow, exactly one `h1`,
-nothing renders past the footer, the mobile hamburger menu works, the team CV modal
-opens/closes) and an axe-core accessibility sweep, both across desktop and two mobile
-viewports. The sweep covers the home page, a service landing page and the admin sign-in
-screen, each in **both light and dark mode** — the dark pass flips the real header toggle
-rather than pre-seeding `localStorage`, so it exercises the toggle itself as well as the
-tokens underneath it. `npm run check:lighthouse` audits the built, prerendered output and gates on
-accessibility/SEO/best-practices at 100 — performance is measured and printed but never
-gated, since a shared CI runner's timings vary by more than the thing being measured.
-`npm run check:budgets` is the deterministic half of that: a gzipped bundle-size ceiling.
+`npm run test:e2e` runs layout assertions (no horizontal overflow, exactly one `h1`, nothing
+renders past the footer, the hamburger menu works, the CV modal opens and closes, and — at
+the landscape viewport — that the Qalor section stacks and the Werkproces steps are centred)
+plus an axe-core accessibility sweep, across desktop and two mobile viewports. The sweep
+covers the home page, a service landing page, the admin sign-in screen and the CV modal, each
+in **both light and dark mode** — the dark pass flips the real header toggle rather than
+pre-seeding `localStorage`, so it exercises the toggle itself as well as the tokens
+underneath it.
+
+Two things about the suite are worth knowing before adding to it:
+
+- **Every test fails on an uncaught page error** (`e2e/fixtures.ts`). That only helps for
+  code a test actually reaches, though — a `TypeError` thrown on every header-logo press went
+  unnoticed for exactly as long as no test pressed the logo.
+- **Only the `mobile-touch` project has touch.** The three viewport projects are Desktop
+  Chrome at a smaller size with `isMobile: false`, so they report `pointer: fine` and fire no
+  touch events. Anything that behaves differently under a finger belongs in
+  `e2e/touch.spec.ts`, or it will pass here and fail on a phone.
+
+`npm run check:lighthouse` audits the built, prerendered output and gates accessibility, SEO
+and best-practices at 100, plus CLS at 0.05. Performance is measured and printed but never
+gated: a shared CI runner's timings vary by more than the thing being measured. CLS is gated
+because it describes how much the layout moved, which is a property of the markup rather than
+of the machine. `npm run check:budgets` is the other deterministic half — a gzipped ceiling on
+the initial payload, and one per lazy chunk so an expensive on-demand import can't go
+unnoticed the way a 1.5MB PDF viewer once did.
 
 `npm run prerender` gates itself too: it fails the build if a route captures almost no text,
 if any route logs a React hydration error, or if a route **lays out differently once
@@ -176,6 +192,27 @@ weekly schedule so admin-portal edits reach crawlers even without a manual redep
   site's document root (defaults to `/`)
 - `VITE_API_URL`, once the admin API is deployed — see [ADMIN.md](ADMIN.md) for the full
   walkthrough (Firestore, Cloudinary, Render, all still on local placeholders today)
+
+**The workflow triggers on `master`.** This repository's default branch is `main`, so pushes
+here do not start a CI run — use **Actions → CI → Run workflow**, or add `main` to the
+trigger. Worth knowing before trusting a green checkmark that was never asked for.
+
+### The GitHub Pages preview
+
+<https://artoriun.github.io/qalor-website-preview/> is published from the `gh-pages` branch,
+built by hand rather than by CI:
+
+```bash
+cd packages/web && rm -rf dist
+VITE_BASE=/qalor-website-preview/ VITE_API_URL=<api> npm run build
+VITE_BASE=/qalor-website-preview/ NOINDEX=1 npm run prerender
+# then copy dist/ onto gh-pages (plus an empty .nojekyll) and push
+```
+
+Do **not** copy `index.html` over `404.html` afterwards. `prerender.mjs` writes `404.html`
+deliberately as the plain, un-prerendered shell so that a deep link boots straight into its
+own route; replacing it with the prerendered home page makes `/admin` flash the home page
+before React swaps it out.
 
 Two build-time env vars matter outside CI:
 
