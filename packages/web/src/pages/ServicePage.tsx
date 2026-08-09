@@ -36,9 +36,13 @@ export default function ServicePage({ page }: { page: ServicePageContent }) {
 
           {/* Real navigation, not decoration: a search visitor lands here mid-funnel, and
               this is the only route back to the process, projects and contact details that
-              would otherwise be a page they never see. */}
+              would otherwise be a page they never see.
+
+              BASE_URL-prefixed, not a bare '/': under a project subpath a hardcoded '/'
+              leaves the site altogether (github.io's own root), same trap Navbar.tsx's
+              smoothScrollTo has. */}
           <p className="service-back">
-            <a href="/#how-it-works">Bekijk ons volledige werkproces</a>
+            <a href={`${import.meta.env.BASE_URL}#how-it-works`}>Bekijk ons volledige werkproces</a>
           </p>
         </article>
       </main>
