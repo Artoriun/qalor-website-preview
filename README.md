@@ -33,7 +33,12 @@ Lighthouse audit and a bundle budget — nothing publishes unless all of it pass
 - Prerendered on build: a real browser boots the built app on each route and writes the
   resulting DOM back into that route's `index.html`, so a visitor's (or crawler's) first
   response is actual content, not a blank shell waiting on JavaScript.
-- Team and project carousels — auto-advancing, drag/swipe-enabled, infinite-wrap.
+- Team and project carousels share one component
+  (`packages/web/src/components/Carousel/`) — auto-advancing, drag/swipe-enabled,
+  infinite-wrap, with a pause button, arrow-key navigation, position dots and a
+  `prefers-reduced-motion` opt-out. The two used to hand-roll the same logic separately and
+  neither could be stopped, which fails WCAG 2.2.2 — and no automated check catches that,
+  since axe can't tell that something moves on a timer.
 - Team member CVs open in a modal rendered by the browser's own PDF viewer — an `<iframe>`,
   no library. The previous `@react-pdf-viewer/core` + self-hosted pdf.js worker transferred
   1.54MB to display a 102KB document; 1.09MB of that was the worker alone.
@@ -68,7 +73,8 @@ biome.json                 # lint + format config
 turbo.json                  # build/dev/typecheck task graph
 e2e/
 ├── layout.spec.ts        # overflow, exactly one h1, footer bounds, hamburger menu, CV modal
-└── a11y.spec.ts           # axe sweep at every viewport
+├── carousel.spec.ts       # drag threshold/snap-back, pause + resume, arrow keys, overflow
+└── a11y.spec.ts           # axe sweep at every viewport, light and dark
 scripts/
 ├── prerender.mjs          # captures each route's DOM into <route>/index.html, + sitemap/robots/llms
 ├── check-budgets.mjs       # gzipped initial-payload budget

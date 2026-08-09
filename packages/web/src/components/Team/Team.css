@@ -1,0 +1,147 @@
+.team-section {
+  padding: 80px 20px;
+  background-color: var(--bg-page);
+  width: 100%;
+}
+
+.team-inner {
+  max-width: 1400px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.team-intro {
+  margin-bottom: 3rem;
+}
+
+.team-eyebrow {
+  font-size: 1.6rem;
+  color: var(--accent-text-strong);
+  margin-bottom: 0.5rem;
+  font-weight: 400;
+}
+
+.team-inner h2 {
+  font-size: 2rem;
+  margin: 0 auto 1rem;
+  max-width: 1100px;
+  color: var(--text-heading);
+  font-weight: 600;
+}
+
+.team-card {
+  position: relative;
+  width: 100%;
+  max-width: 350px;
+  min-height: 320px;
+  border-radius: 8px;
+  overflow: hidden;
+  background-color: var(--bg-section);
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  box-shadow: 0 8px 25px rgba(241, 136, 37, 0.15);
+  cursor: pointer;
+}
+
+/* The Qalor logo slide: contained, not cropped, and on no plate of its own. */
+.team-card-logo {
+  display: block;
+  margin: 0 auto;
+  height: 320px;
+  object-fit: contain;
+  background: none;
+  box-shadow: none;
+  cursor: default;
+}
+
+@media (max-width: 768px) {
+  .team-card {
+    max-width: 100%;
+    min-height: 300px;
+  }
+  .team-card-logo {
+    height: 300px;
+  }
+}
+
+/* White on a scrim, deliberately not tokenised — see the note in Team.tsx. Starts halfway
+   up the card so the gradient has room to fade out above the text rather than through it;
+   justify-content keeps the text pinned to the bottom, inside the solid zone, whatever the
+   text length. */
+.team-card-caption {
+  position: absolute;
+  inset: 50% 0 0 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  text-align: center;
+  padding: 16px 0 12px;
+  border-radius: 0 0 8px 8px;
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.5) 0%,
+    rgba(0, 0, 0, 0.5) 50%,
+    rgba(0, 0, 0, 0) 100%
+  );
+}
+
+.team-card-caption h3 {
+  font-size: 1.3rem;
+  margin: 0;
+  color: #fff;
+}
+
+.team-card-meta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.team-card-meta p {
+  color: #fff;
+  line-height: 1.4;
+  margin: 0;
+  font-size: 1rem;
+}
+
+/* Fill plus its own text, so this pair is theme-invariant: black on white inside the card,
+   with the brand orange only on the arrow badge. */
+.team-cv-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  height: 24px;
+  padding: 5px 9px;
+  border: none;
+  border-radius: 50px;
+  background: #fff;
+  color: #000;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+}
+
+.team-cv-arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  margin-left: 4px;
+  border-radius: 50%;
+  background-color: var(--accent);
+  color: var(--accent-on-fill);
+  font-size: 13px;
+  font-weight: bold;
+}
+
+.team-modal-placeholder {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background-color: rgba(0, 0, 0, 0.8);
+}

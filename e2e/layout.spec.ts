@@ -60,13 +60,17 @@ test('the mobile hamburger menu opens and its links are reachable', async ({ pag
 
 test('opening a team member CV and closing it with Escape works', async ({ page }) => {
   await page.goto('/');
-  // Team is a lazy-loaded, below-the-fold section — wait for its "CV" buttons to mount.
-  // The carousel renders the infinite-scroll wrap copies before the real slides in DOM
-  // order, and those wrap copies sit clipped outside the carousel's visible window
-  // (overflow: hidden), so .first() picks an unclickable off-screen button. The carousel
-  // starts centered on the first real member (Peter, see Team.tsx's initial
-  // currentSlide), which is the 3rd "CV" button in DOM order.
-  const cvButton = page.getByRole('button', { name: 'CV' }).nth(2);
+  // Stop the carousel first: it auto-advances, so a CV button is a moving target and
+  // Playwright will wait forever for one to be "stable". This is also the cheapest possible
+  // proof that the pause control does what it says.
+  const team = page.getByRole('region', { name: 'Teamleden' });
+  await team.getByRole('button', { name: /pauzeren/i }).click();
+
+  // The track renders three copies of the slides so the infinite wrap has somewhere to go;
+  // only the middle copy is real, the outer two are `inert` duplicates (see Carousel.tsx).
+  // Scoping to :not([inert]) targets a button that is actually reachable rather than a
+  // clipped copy outside the frame.
+  const cvButton = team.locator('.carousel-slide:not([inert]) .team-cv-button').first();
   await cvButton.waitFor({ state: 'visible', timeout: 15_000 });
   await cvButton.click();
 

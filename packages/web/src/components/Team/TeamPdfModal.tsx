@@ -29,13 +29,11 @@ const withBase = (path: string) =>
  * always visible rather than hidden behind a failure that can't be feature-detected.
  */
 type TeamPdfModalProps = {
-  /** Remounts the iframe when a different CV is opened without the modal closing first. */
-  pdfKey: number;
   pdfPath: string;
   onClose: () => void;
 };
 
-const TeamPdfModal = ({ pdfKey, pdfPath, onClose }: TeamPdfModalProps) => {
+const TeamPdfModal = ({ pdfPath, onClose }: TeamPdfModalProps) => {
   const url = withBase(pdfPath);
 
   return (
@@ -61,7 +59,7 @@ const TeamPdfModal = ({ pdfKey, pdfPath, onClose }: TeamPdfModalProps) => {
             ×
           </button>
         </div>
-        <iframe key={pdfKey} src={url} title="CV" className="pdf-modal-frame" />
+        <iframe src={url} title="CV" className="pdf-modal-frame" />
       </div>
     </div>
   );
