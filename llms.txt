@@ -1,0 +1,19 @@
+# Qalor
+
+> Qalor — energiedeskundigen voor warmtenetten: advies, ontwerp en realisatie van energie-efficiënte warmteoplossingen voor gebouwen en wijken.
+
+## Pages
+
+- [Home](https://qalor.nl/): Overview of Qalor's heating-network expertise and services.
+- [Warmtenet tekening](https://qalor.nl/warmtenet-tekening/): Qalor vervaardigt de nettekening van uw warmtenet in AutoCAD: tracé, leidingdiameters en aansluitingen, als basis voor ontwerp en berekening.
+- [Warmtenet ontwerp](https://qalor.nl/warmtenet-ontwerp/): Ontwerp van warmtenetten voor gebouwen en wijken: tracékeuze, dimensionering en temperatuurregime, door ingenieurs met ruim 100 jaar ervaring bij warmtebedrijven.
+- [Warmtenetberekening](https://qalor.nl/warmtenetberekening/): Warmtenetberekening op basis van een gebouwendatabase: warmtevraag, vermogens en leidingdimensionering, onderbouwd per aansluiting.
+- [Warmtenet business case](https://qalor.nl/warmtenet-business-case/): Exploitatieberekening en business case voor uw warmtenet: investering, opbrengsten en onrendabele top, zodat een project financieel onderbouwd is.
+
+## Sections
+
+- [Ons team](https://qalor.nl/#team): The team and their combined experience in the heating industry.
+- [Qalor](https://qalor.nl/#qalor): What Qalor does and how it approaches energy projects.
+- [Ons werkproces](https://qalor.nl/#how-it-works): The step-by-step process behind every heating-network project.
+- [Projecten](https://qalor.nl/#projects): Completed heating-network projects.
+- [Contact](https://qalor.nl/#footer): Contact details.
