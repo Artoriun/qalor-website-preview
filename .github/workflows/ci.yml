@@ -8,7 +8,11 @@ name: CI
 # afterwards. Keeping it here makes the ordering structural rather than a policy.
 on:
   push:
-    branches: ['master']
+    # Both, because this repo's default branch is `main` while the FTP deploy below is
+    # gated to `master`: without `main` here, pushes to the default branch started no run
+    # at all and the pipeline only ever ran when dispatched by hand. Adding it runs the
+    # checks; the deploy job's own `if:` still restricts publishing to `master`.
+    branches: ['master', 'main']
   pull_request:
   workflow_dispatch:
   # Content edited in the admin portal is live for a signed-in visitor immediately (see
