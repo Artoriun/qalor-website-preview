@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Prerenders the single '/' route to static HTML.
+ * Prerenders the site's routes (see ROUTES below) to static HTML.
  *
  * The site is a client-rendered SPA: without this, a visitor's (or crawler's) first
  * response is `<div id="root"></div>` and real content only appears once React has
@@ -21,7 +21,7 @@
  * fetched) would trip the hydration gate below just as surely as a real content bug.
  */
 import { spawn } from 'node:child_process';
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { chromium } from '@playwright/test';
 import { DEFAULT_SITE_CONTENT, SITE_DESCRIPTION, SITE_TITLE } from '@qalor/shared';
@@ -30,6 +30,61 @@ import { DEFAULT_SITE_CONTENT, SITE_DESCRIPTION, SITE_TITLE } from '@qalor/share
 const SITE = (process.env.SITE_URL ?? 'https://qalor.nl').replace(/\/$/, '');
 const DIST = new URL('../packages/web/dist/', import.meta.url).pathname;
 const PORT = 4599;
+
+/**
+ * One prerendered file per search intent.
+ *
+ * Qalor's five target terms are three different intents — a drawing, a design, a
+ * calculation/business case — and one page cannot rank for all of them. Each route below
+ * gets its own <title>, meta description, canonical and JSON-LD Service block, written to
+ * its own directory so a static host serves it as a real URL.
+ *
+ * IMPORTANT, and the reason this is only half the SEO job: the app renders the same
+ * marketing page for every non-/admin path, so all of these currently share identical
+ * visible copy. Google treats near-duplicate pages as doorway pages and may ignore or
+ * penalise them. These routes are not finished SEO until each carries genuinely distinct
+ * on-page content — the `heading`/`intro` below are placeholders marking where that goes.
+ *
+ * `trailingSlash` matters: the files are written as <path>/index.html, which is what a
+ * static host (GitHub Pages, Apache) serves for a directory request, and it canonicalises
+ * to the slashed form — so the canonical and sitemap must agree with that or they fight.
+ */
+const ROUTES = [
+  {
+    path: '/',
+    title: 'Warmtenet ontwerp, tekening en berekening | Qalor',
+    description: SITE_DESCRIPTION,
+    service: null,
+  },
+  {
+    path: '/warmtenet-tekening/',
+    title: 'Warmtenet tekening in AutoCAD | Qalor',
+    description:
+      'Qalor vervaardigt de nettekening van uw warmtenet in AutoCAD: tracé, leidingdiameters en aansluitingen, als basis voor ontwerp en berekening.',
+    service: 'Warmtenet tekening',
+  },
+  {
+    path: '/warmtenet-ontwerp/',
+    title: 'Warmtenet ontwerp door energiedeskundigen | Qalor',
+    description:
+      'Ontwerp van warmtenetten voor gebouwen en wijken: tracékeuze, dimensionering en temperatuurregime, door ingenieurs met ruim 100 jaar ervaring bij warmtebedrijven.',
+    service: 'Warmtenet ontwerp',
+  },
+  {
+    path: '/warmtenetberekening/',
+    title: 'Warmtenetberekening en gebouwendatabase | Qalor',
+    description:
+      'Warmtenetberekening op basis van een gebouwendatabase: warmtevraag, vermogens en leidingdimensionering, onderbouwd per aansluiting.',
+    service: 'Warmtenetberekening',
+  },
+  {
+    path: '/warmtenet-business-case/',
+    title: 'Warmtenet business case en exploitatieberekening | Qalor',
+    description:
+      'Exploitatieberekening en business case voor uw warmtenet: investering, opbrengsten en onrendabele top, zodat een project financieel onderbouwd is.',
+    service: 'Warmtenet business case',
+  },
+];
 
 const esc = (s) =>
   s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -139,13 +194,61 @@ if (cssLinkMatch) {
   template = template.replace(cssLinkMatch[0], `<style>${css}</style>`);
 }
 
-const canonicalTag = `<link rel="canonical" href="${esc(SITE)}/" />`;
-const ogTags = [
-  '<meta property="og:type" content="website" />',
-  `<meta property="og:title" content="${esc(SITE_TITLE)}" />`,
-  `<meta property="og:description" content="${esc(SITE_DESCRIPTION)}" />`,
-  `<meta property="og:url" content="${esc(SITE)}/" />`,
-].join('\n    ');
+/**
+ * JSON-LD. Organization on every page (one business, stated once per document), plus a
+ * Service block on the four service routes describing that specific offering.
+ *
+ * `provider` points back at the Organization by @id rather than repeating it, so a
+ * consumer reading any single page can tell all five Services belong to one company.
+ * Contact details come from the same admin-editable content the Footer renders, not a
+ * second hardcoded copy that would silently drift once someone edits them in the portal.
+ */
+const orgId = `${SITE}/#organization`;
+const organization = {
+  '@type': 'Organization',
+  '@id': orgId,
+  name: SITE_TITLE,
+  url: `${SITE}/`,
+  description: SITE_DESCRIPTION,
+  email: content.footer.email,
+  telephone: content.footer.phone,
+  address: { '@type': 'PostalAddress', streetAddress: content.footer.address },
+  vatID: content.footer.btwNumber,
+};
+
+const jsonLdFor = (route) => {
+  const graph = [organization];
+  if (route.service) {
+    graph.push({
+      '@type': 'Service',
+      name: route.service,
+      serviceType: route.service,
+      description: route.description,
+      url: `${SITE}${route.path}`,
+      provider: { '@id': orgId },
+      areaServed: { '@type': 'Country', name: 'Nederland' },
+    });
+  }
+  // Same '<' escape as the content script below, for the same reason: these strings are
+  // admin-editable, so a stray "</script>" in one would otherwise close this tag early.
+  const json = JSON.stringify({ '@context': 'https://schema.org', '@graph': graph }).replace(
+    /</g,
+    '\\u003c',
+  );
+  return `<script type="application/ld+json">${json}</script>`;
+};
+
+const headFor = (route) => {
+  const url = `${esc(SITE)}${esc(route.path)}`;
+  return [
+    `<link rel="canonical" href="${url}" />`,
+    '<meta property="og:type" content="website" />',
+    `<meta property="og:title" content="${esc(route.title)}" />`,
+    `<meta property="og:description" content="${esc(route.description)}" />`,
+    `<meta property="og:url" content="${url}" />`,
+    jsonLdFor(route),
+  ].join('\n    ');
+};
 
 /**
  * Preload the LCP candidate (Hero's photo) so the browser starts fetching it while
@@ -172,15 +275,25 @@ const preloadTag = `<link rel="preload" as="image" href="${esc(heroOptimize(1024
 const contentJson = JSON.stringify(content).replace(/</g, '\\u003c');
 const contentScript = `<script>window.__CONTENT__=${contentJson}</script>`;
 
-const html = template
-  .replace('<html ', '<html data-prerendered ')
-  .replace(
-    '</title>',
-    `</title>\n    ${canonicalTag}\n    ${ogTags}\n    ${preloadTag}\n    ${contentScript}`,
-  )
-  .replace('<div id="root"></div>', `<div id="root">${root}</div>`);
+// One capture, N files: the app renders the same marketing page for every non-/admin path
+// (App.tsx only branches on /admin), so re-navigating per route would produce byte-identical
+// DOM — and would 404 against `vite preview`, since these directories don't exist until this
+// loop writes them. What actually differs per route is the <head>, which is built above.
+for (const route of ROUTES) {
+  const html = template
+    .replace('<html ', '<html data-prerendered ')
+    .replace(
+      /<meta\s+name="description"\s+content="[^"]*"\s*\/?>/,
+      `<meta name="description" content="${esc(route.description)}" />`,
+    )
+    .replace(/<title>[^<]*<\/title>/, `<title>${esc(route.title)}</title>`)
+    .replace('</title>', `</title>\n    ${headFor(route)}\n    ${preloadTag}\n    ${contentScript}`)
+    .replace('<div id="root"></div>', `<div id="root">${root}</div>`);
 
-writeFileSync(join(DIST, 'index.html'), html);
+  const outDir = join(DIST, route.path);
+  mkdirSync(outDir, { recursive: true });
+  writeFileSync(join(outDir, 'index.html'), html);
+}
 
 // A static host (GitHub Pages, and this site's own FTP host — neither ships an
 // .htaccess/_redirects from this repo) serves 404.html for any path with no matching
@@ -192,9 +305,12 @@ writeFileSync(join(DIST, '404.html'), template);
 
 // ---- sitemap + robots -----------------------------------------------------------
 const today = new Date().toISOString().slice(0, 10);
+const urls = ROUTES.map(
+  (r) => `  <url><loc>${SITE}${r.path}</loc><lastmod>${today}</lastmod></url>`,
+).join('\n');
 writeFileSync(
   join(DIST, 'sitemap.xml'),
-  `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n  <url><loc>${SITE}/</loc><lastmod>${today}</lastmod></url>\n</urlset>\n`,
+  `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`,
 );
 writeFileSync(
   join(DIST, 'robots.txt'),
@@ -206,7 +322,13 @@ writeFileSync(
 // section it needs instead of having to fetch and parse the whole page.
 writeFileSync(
   join(DIST, 'llms.txt'),
-  `# ${SITE_TITLE}\n\n> ${SITE_DESCRIPTION}\n\n## Pages\n\n- [Home](${SITE}/): Overview of Qalor's heating-network expertise and services.\n- [Ons team](${SITE}/#team): The team and their combined experience in the heating industry.\n- [Qalor](${SITE}/#qalor): What Qalor does and how it approaches energy projects.\n- [Ons werkproces](${SITE}/#how-it-works): The step-by-step process behind every heating-network project.\n- [Projecten](${SITE}/#projects): Completed heating-network projects.\n- [Contact](${SITE}/#footer): Contact details.\n`,
+  `# ${SITE_TITLE}\n\n> ${SITE_DESCRIPTION}\n\n## Pages\n\n- [Home](${SITE}/): Overview of Qalor's heating-network expertise and services.\n${ROUTES.filter(
+    (r) => r.service,
+  )
+    .map((r) => `- [${r.service}](${SITE}${r.path}): ${r.description}`)
+    .join(
+      '\n',
+    )}\n\n## Sections\n\n- [Ons team](${SITE}/#team): The team and their combined experience in the heating industry.\n- [Qalor](${SITE}/#qalor): What Qalor does and how it approaches energy projects.\n- [Ons werkproces](${SITE}/#how-it-works): The step-by-step process behind every heating-network project.\n- [Projecten](${SITE}/#projects): Completed heating-network projects.\n- [Contact](${SITE}/#footer): Contact details.\n`,
 );
 
 // ---- hydration gate -------------------------------------------------------------
@@ -247,4 +369,6 @@ if (failed) {
   console.error('✗ prerender produced problem(s); not publishing this build');
   process.exit(1);
 }
-console.log('✓ prerendered / — hydrates cleanly, sitemap.xml and robots.txt written');
+console.log(
+  `✓ prerendered ${ROUTES.length} routes (${ROUTES.map((r) => r.path).join(' ')}) — hydrates cleanly, sitemap.xml and robots.txt written`,
+);
