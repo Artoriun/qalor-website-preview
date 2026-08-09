@@ -28,6 +28,12 @@ import { DEFAULT_SITE_CONTENT, SITE_DESCRIPTION, SITE_TITLE } from '@qalor/share
 
 // Where the site will actually live. Used for the canonical link and sitemap.
 const SITE = (process.env.SITE_URL ?? 'https://qalor.nl').replace(/\/$/, '');
+
+// Set on preview builds (the GitHub Pages copy). That host serves the same real content as
+// production, which without this is duplicate content competing with qalor.nl for the very
+// terms ROUTES below is built to win. Canonicals already point at SITE (qalor.nl) even from
+// the preview, which handles most of it; the noindex meta this adds is the explicit half.
+const NOINDEX = process.env.NOINDEX === '1';
 const DIST = new URL('../packages/web/dist/', import.meta.url).pathname;
 const PORT = 4599;
 
@@ -133,10 +139,14 @@ process.on('SIGINT', () => {
   process.exit(1);
 });
 
+// Must match vite.config.ts's base (same env var), or `vite preview` serves the app at a
+// path this script never navigates to and the capture below is an empty shell.
+const BASE = process.env.VITE_BASE ?? '/';
 const origin = `http://localhost:${PORT}`;
+const appUrl = `${origin}${BASE}`;
 for (let i = 0; i < 60; i++) {
   try {
-    const r = await fetch(origin);
+    const r = await fetch(appUrl);
     if (r.ok) break;
   } catch {}
   await new Promise((r) => setTimeout(r, 500));
@@ -155,7 +165,7 @@ await page.addInitScript((data) => {
   window.__CONTENT__ = data;
 }, content);
 
-await page.goto(origin, { waitUntil: 'networkidle' });
+await page.goto(appUrl, { waitUntil: 'networkidle' });
 
 // The below-the-fold sections are React.lazy()+Suspense, not viewport-gated — they
 // resolve on their own shortly after mount. 'networkidle' above already waits for their
@@ -241,6 +251,7 @@ const jsonLdFor = (route) => {
 const headFor = (route) => {
   const url = `${esc(SITE)}${esc(route.path)}`;
   return [
+    ...(NOINDEX ? ['<meta name="robots" content="noindex, nofollow" />'] : []),
     `<link rel="canonical" href="${url}" />`,
     '<meta property="og:type" content="website" />',
     `<meta property="og:title" content="${esc(route.title)}" />`,
@@ -312,9 +323,17 @@ writeFileSync(
   join(DIST, 'sitemap.xml'),
   `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`,
 );
+// Deliberately NOT `Disallow: /` on a NOINDEX build. Disallow blocks *crawling*, which
+// means Googlebot never fetches the page and so never sees the noindex meta tag added
+// above — a URL blocked that way can still get indexed from an external link, with no way
+// to tell Google to drop it. Allowing the crawl so it reads noindex is what actually keeps
+// the preview out of the index. The sitemap line is dropped on a NOINDEX build for the
+// same reason it exists on a real one: it's an invitation to index.
 writeFileSync(
   join(DIST, 'robots.txt'),
-  `User-agent: *\nAllow: /\n\nSitemap: ${SITE}/sitemap.xml\n`,
+  NOINDEX
+    ? `User-agent: *\nAllow: /\n`
+    : `User-agent: *\nAllow: /\n\nSitemap: ${SITE}/sitemap.xml\n`,
 );
 
 // llms.txt (https://llmstxt.org/): an H1, a one-line summary, then linked sections — the
@@ -350,7 +369,7 @@ hydrationPage.on('pageerror', (e) => {
   if (code && ['418', '423', '425'].includes(code)) mismatches.push(code);
 });
 
-await hydrationPage.goto(origin, { waitUntil: 'networkidle' });
+await hydrationPage.goto(appUrl, { waitUntil: 'networkidle' });
 await hydrationPage.waitForTimeout(500);
 
 let failed = false;

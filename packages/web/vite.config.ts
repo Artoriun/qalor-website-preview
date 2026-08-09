@@ -2,11 +2,15 @@ import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
 
 // base is '/' for a custom domain served from its document root (qalor.nl via FTP).
-// '/qalor/' was a GitHub Pages project-site path this repo no longer deploys to —
-// verify against the live host's actual document root before merging.
+//
+// Overridable via VITE_BASE for the GitHub Pages preview, which is served from a project
+// subpath ('/qalor-website-preview/'). Read here rather than passed as `vite build --base`
+// so that `vite build` and `vite preview` agree: preview reads this config, not the build's
+// CLI flags, and a mismatch means scripts/prerender.mjs boots a page whose asset URLs all
+// 404 — capturing an empty shell instead of failing loudly.
 export default defineConfig({
   plugins: [react()],
-  base: '/',
+  base: process.env.VITE_BASE ?? '/',
   server: {
     allowedHosts: [
       'localhost',
