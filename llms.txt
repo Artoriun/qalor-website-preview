@@ -5,10 +5,10 @@
 ## Pages
 
 - [Home](https://qalor.nl/): Overview of Qalor's heating-network expertise and services.
-- [Warmtenet tekening](https://qalor.nl/warmtenet-tekening/): Qalor vervaardigt de nettekening van uw warmtenet in AutoCAD: tracé, leidingdiameters en aansluitingen, als basis voor ontwerp en berekening.
+- [Warmtenet tekening in AutoCAD](https://qalor.nl/warmtenet-tekening/): Qalor vervaardigt de nettekening van uw warmtenet in AutoCAD: tracé, leidingdiameters en aansluitingen, als basis voor ontwerp en berekening.
 - [Warmtenet ontwerp](https://qalor.nl/warmtenet-ontwerp/): Ontwerp van warmtenetten voor gebouwen en wijken: tracékeuze, dimensionering en temperatuurregime, door ingenieurs met ruim 100 jaar ervaring bij warmtebedrijven.
-- [Warmtenetberekening](https://qalor.nl/warmtenetberekening/): Warmtenetberekening op basis van een gebouwendatabase: warmtevraag, vermogens en leidingdimensionering, onderbouwd per aansluiting.
-- [Warmtenet business case](https://qalor.nl/warmtenet-business-case/): Exploitatieberekening en business case voor uw warmtenet: investering, opbrengsten en onrendabele top, zodat een project financieel onderbouwd is.
+- [Warmtenetberekening en gebouwendatabase](https://qalor.nl/warmtenetberekening/): Warmtenetberekening op basis van een gebouwendatabase: warmtevraag, vermogens en leidingdimensionering, onderbouwd per aansluiting.
+- [Warmtenet business case en exploitatieberekening](https://qalor.nl/warmtenet-business-case/): Exploitatieberekening en business case voor uw warmtenet: investering, opbrengsten en onrendabele top, zodat een project financieel onderbouwd is.
 
 ## Sections
 
