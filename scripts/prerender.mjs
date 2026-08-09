@@ -24,7 +24,7 @@ import { spawn } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { chromium } from '@playwright/test';
-import { DEFAULT_SITE_CONTENT, SITE_DESCRIPTION, SITE_TITLE } from '@qalor/shared';
+import { DEFAULT_SITE_CONTENT, SERVICE_PAGES, SITE_DESCRIPTION, SITE_TITLE } from '@qalor/shared';
 
 // Where the site will actually live. Used for the canonical link and sitemap.
 const SITE = (process.env.SITE_URL ?? 'https://qalor.nl').replace(/\/$/, '');
@@ -38,22 +38,19 @@ const DIST = new URL('../packages/web/dist/', import.meta.url).pathname;
 const PORT = 4599;
 
 /**
- * One prerendered file per search intent.
+ * One prerendered file per search intent, derived from SERVICE_PAGES so the copy, the URL,
+ * the sitemap and the schema can never disagree — adding a landing page is one edit in
+ * @qalor/shared, not four here.
  *
- * Qalor's five target terms are three different intents — a drawing, a design, a
- * calculation/business case — and one page cannot rank for all of them. Each route below
- * gets its own <title>, meta description, canonical and JSON-LD Service block, written to
- * its own directory so a static host serves it as a real URL.
+ * Qalor's five target terms are three different intents (a drawing, a design, a
+ * calculation/business case) and one page cannot rank for all of them. Each route gets its
+ * own <title>, meta description, canonical and JSON-LD Service block, written to its own
+ * directory so a static host serves it as a real URL.
  *
- * IMPORTANT, and the reason this is only half the SEO job: the app renders the same
- * marketing page for every non-/admin path, so all of these currently share identical
- * visible copy. Google treats near-duplicate pages as doorway pages and may ignore or
- * penalise them. These routes are not finished SEO until each carries genuinely distinct
- * on-page content — the `heading`/`intro` below are placeholders marking where that goes.
- *
- * `trailingSlash` matters: the files are written as <path>/index.html, which is what a
- * static host (GitHub Pages, Apache) serves for a directory request, and it canonicalises
- * to the slashed form — so the canonical and sitemap must agree with that or they fight.
+ * Trailing slashes are deliberate: the files are written as <path>/index.html, which is
+ * what a static host (GitHub Pages, Apache) serves for a directory request, and it
+ * canonicalises to the slashed form — so the canonical and sitemap must agree with that or
+ * they fight. App.tsx matches both forms, for hosts that don't redirect.
  */
 const ROUTES = [
   {
@@ -62,34 +59,12 @@ const ROUTES = [
     description: SITE_DESCRIPTION,
     service: null,
   },
-  {
-    path: '/warmtenet-tekening/',
-    title: 'Warmtenet tekening in AutoCAD | Qalor',
-    description:
-      'Qalor vervaardigt de nettekening van uw warmtenet in AutoCAD: tracé, leidingdiameters en aansluitingen, als basis voor ontwerp en berekening.',
-    service: 'Warmtenet tekening',
-  },
-  {
-    path: '/warmtenet-ontwerp/',
-    title: 'Warmtenet ontwerp door energiedeskundigen | Qalor',
-    description:
-      'Ontwerp van warmtenetten voor gebouwen en wijken: tracékeuze, dimensionering en temperatuurregime, door ingenieurs met ruim 100 jaar ervaring bij warmtebedrijven.',
-    service: 'Warmtenet ontwerp',
-  },
-  {
-    path: '/warmtenetberekening/',
-    title: 'Warmtenetberekening en gebouwendatabase | Qalor',
-    description:
-      'Warmtenetberekening op basis van een gebouwendatabase: warmtevraag, vermogens en leidingdimensionering, onderbouwd per aansluiting.',
-    service: 'Warmtenetberekening',
-  },
-  {
-    path: '/warmtenet-business-case/',
-    title: 'Warmtenet business case en exploitatieberekening | Qalor',
-    description:
-      'Exploitatieberekening en business case voor uw warmtenet: investering, opbrengsten en onrendabele top, zodat een project financieel onderbouwd is.',
-    service: 'Warmtenet business case',
-  },
+  ...SERVICE_PAGES.map((p) => ({
+    path: `/${p.slug}/`,
+    title: p.title,
+    description: p.description,
+    service: p.h1,
+  })),
 ];
 
 const esc = (s) =>
@@ -165,26 +140,39 @@ await page.addInitScript((data) => {
   window.__CONTENT__ = data;
 }, content);
 
-await page.goto(appUrl, { waitUntil: 'networkidle' });
+/**
+ * Capture one route's rendered DOM.
+ *
+ * Navigates per route rather than reusing a single capture: the service routes render
+ * genuinely different content from the home page now (App.tsx matches the path against
+ * SERVICE_PAGES), which is the whole point of them existing. `vite preview` falls back to
+ * index.html for paths with no matching file, so this works before the directories this
+ * script is about to write exist.
+ */
+async function capture(path) {
+  await page.goto(`${appUrl.replace(/\/$/, '')}${path}`, { waitUntil: 'networkidle' });
+  // The below-the-fold sections are React.lazy()+Suspense, not viewport-gated — they
+  // resolve on their own shortly after mount. 'networkidle' above already waits for their
+  // chunk requests, but give React one more tick to finish committing the resolved trees
+  // before capturing, since Suspense's fallback -> real content swap isn't itself a
+  // network event.
+  await page.waitForTimeout(300);
 
-// The below-the-fold sections are React.lazy()+Suspense, not viewport-gated — they
-// resolve on their own shortly after mount. 'networkidle' above already waits for their
-// chunk requests, but give React one more tick to finish committing the resolved trees
-// before capturing, since Suspense's fallback -> real content swap isn't itself a
-// network event.
-await page.waitForTimeout(300);
-
-const root = await page.evaluate(() => document.getElementById('root')?.innerHTML ?? '');
-const visible = root
-  .replace(/<script[\s\S]*?<\/script>/g, '')
-  .replace(/<[^>]+>/g, ' ')
-  .replace(/\s+/g, ' ')
-  .trim();
-if (visible.length < 200) {
-  console.error(`✗ prerender captured only ${visible.length} chars of text — not publishing`);
-  await browser.close();
-  stop();
-  process.exit(1);
+  const root = await page.evaluate(() => document.getElementById('root')?.innerHTML ?? '');
+  const visible = root
+    .replace(/<script[\s\S]*?<\/script>/g, '')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (visible.length < 200) {
+    console.error(
+      `✗ prerender captured only ${visible.length} chars of text for ${path} — not publishing`,
+    );
+    await browser.close();
+    stop();
+    process.exit(1);
+  }
+  return root;
 }
 
 let template = readFileSync(join(DIST, 'index.html'), 'utf8');
@@ -288,11 +276,8 @@ const preloadTag = `<link rel="preload" as="image" href="${esc(heroOptimize(1024
 const contentJson = JSON.stringify(content).replace(/</g, '\\u003c');
 const contentScript = `<script>window.__CONTENT__=${contentJson}</script>`;
 
-// One capture, N files: the app renders the same marketing page for every non-/admin path
-// (App.tsx only branches on /admin), so re-navigating per route would produce byte-identical
-// DOM — and would 404 against `vite preview`, since these directories don't exist until this
-// loop writes them. What actually differs per route is the <head>, which is built above.
 for (const route of ROUTES) {
+  const root = await capture(route.path);
   const html = template
     .replace('<html ', '<html data-prerendered ')
     .replace(
@@ -371,8 +356,16 @@ hydrationPage.on('pageerror', (e) => {
   if (code && ['418', '423', '425'].includes(code)) mismatches.push(code);
 });
 
-await hydrationPage.goto(appUrl, { waitUntil: 'networkidle' });
-await hydrationPage.waitForTimeout(500);
+// Every route, not just '/': the service pages are a separate render path (App.tsx matches
+// the pathname against SERVICE_PAGES), so a mismatch there would go unnoticed by a gate
+// that only ever loaded the home page. By this point the loop above has written the real
+// files, so `vite preview` serves the actual prerendered output rather than the fallback.
+for (const route of ROUTES) {
+  await hydrationPage.goto(`${appUrl.replace(/\/$/, '')}${route.path}`, {
+    waitUntil: 'networkidle',
+  });
+  await hydrationPage.waitForTimeout(500);
+}
 
 let failed = false;
 

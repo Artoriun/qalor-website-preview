@@ -1,3 +1,4 @@
+import { SERVICE_PAGES } from '@qalor/shared';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
 import { lazy, Suspense, useEffect } from 'react';
@@ -12,6 +13,7 @@ import Team from './components/Team/Team';
 import WorkProcess from './components/WorkProcess/WorkProcess';
 import { ContentProvider } from './context/ContentContext';
 import { ThemeProvider } from './context/ThemeContext';
+import ServicePage from './pages/ServicePage';
 
 // Lazy, not a top-level import: none of the admin portal's code (or its login form) should
 // ship in the bundle a normal visitor downloads. There's no router in this app (react-
@@ -24,6 +26,18 @@ const Admin = lazy(() => import('./pages/Admin'));
 // reasoning applied to its own navigation targets.
 const ADMIN_PATH = `${import.meta.env.BASE_URL}admin`;
 const IS_ADMIN_ROUTE = typeof window !== 'undefined' && window.location.pathname === ADMIN_PATH;
+
+// The SEO landing pages (see SERVICE_PAGES in @qalor/shared). Matched with and without the
+// trailing slash: the prerendered files are written as <slug>/index.html, so a host serves
+// them at the slashed form and usually redirects the bare path to it — but not every host
+// does, and a visitor who types the bare path should not get the home page instead.
+const servicePage =
+  typeof window === 'undefined'
+    ? undefined
+    : SERVICE_PAGES.find((p) => {
+        const path = `${import.meta.env.BASE_URL}${p.slug}`;
+        return window.location.pathname === path || window.location.pathname === `${path}/`;
+      });
 
 // Nothing code-split anymore at this level. Team used to be — it pulled in
 // @react-pdf-viewer/core (117KB gzipped) — but that dependency is only actually needed
@@ -120,6 +134,8 @@ function App() {
           <Suspense fallback={null}>
             <Admin />
           </Suspense>
+        ) : servicePage ? (
+          <ServicePage page={servicePage} />
         ) : (
           <MarketingSite />
         )}

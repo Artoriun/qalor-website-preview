@@ -1,0 +1,78 @@
+/* Everything here is theme-token based, so these pages inherit dark mode with no extra
+   work — see the token block at the top of index.css. */
+
+.service-page {
+  width: 100%;
+  min-height: 100vh;
+  overflow-x: hidden;
+  background: var(--bg-page);
+}
+
+/* 70px clears the fixed Navbar, same allowance Admin.css makes. */
+.service-page main {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: calc(70px + 4rem) 1.5rem 5rem;
+}
+
+.service-eyebrow {
+  /* -body, not -strong: at 0.85rem this is "small text" under WCAG, so it needs the 4.5:1
+     tier (#b75f0c = 4.51:1 on white) rather than the large-text tier the section eyebrows
+     elsewhere on the site can use. Both collapse to the same orange in dark mode. */
+  color: var(--accent-text-body);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+  margin: 0 0 0.75rem;
+}
+
+.service-page h1 {
+  color: var(--text-heading);
+  font-size: clamp(1.9rem, 5vw, 2.75rem);
+  line-height: 1.15;
+  margin: 0 0 1.5rem;
+  /* Keeps a two-line heading from leaving one orphaned word on line two. */
+  text-wrap: balance;
+}
+
+.service-intro {
+  color: var(--text-body);
+  font-size: 1.2rem;
+  line-height: 1.65;
+  margin: 0 0 3rem;
+}
+
+.service-page section {
+  margin-bottom: 2.5rem;
+}
+
+.service-page h2 {
+  color: var(--text-heading);
+  font-size: 1.35rem;
+  line-height: 1.3;
+  margin: 0 0 0.75rem;
+}
+
+.service-page section p {
+  color: var(--text-body);
+  line-height: 1.75;
+  margin: 0;
+}
+
+.service-back {
+  margin: 3.5rem 0 0;
+  padding-top: 2rem;
+  border-top: 1px solid var(--border);
+}
+
+.service-back a {
+  color: var(--accent-text-body);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.service-back a:hover,
+.service-back a:focus-visible {
+  text-decoration: underline;
+}

@@ -79,3 +79,20 @@ test('the admin sign-in screen has no accessibility violations in dark mode', as
   await switchToDarkMode(page);
   await assertNoViolations(page);
 });
+
+// One representative service landing page (see SERVICE_PAGES in @qalor/shared). These share
+// a single component and stylesheet, so a violation on one is a violation on all four —
+// sweeping every one of them would quadruple the runtime for the same finding. Picked the
+// longest page, since it has the most blocks and therefore the most heading levels.
+test('a service landing page has no accessibility violations', async ({ page }) => {
+  await page.goto('/warmtenet-business-case');
+  await page.waitForSelector('#footer');
+  await assertNoViolations(page);
+});
+
+test('a service landing page has no accessibility violations in dark mode', async ({ page }) => {
+  await page.goto('/warmtenet-business-case');
+  await page.waitForSelector('#footer');
+  await switchToDarkMode(page);
+  await assertNoViolations(page);
+});
