@@ -22,7 +22,8 @@
     "prerender": "node scripts/prerender.mjs",
     "check:budgets": "node scripts/check-budgets.mjs",
     "check:lighthouse": "node scripts/check-lighthouse.mjs",
-    "hash-password": "node scripts/hash-password.mjs"
+    "hash-password": "node scripts/hash-password.mjs",
+    "ci": "node scripts/ci-local.mjs"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.12.1",

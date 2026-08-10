@@ -14,8 +14,12 @@ import { defineConfig, devices } from '@playwright/test';
 // entire class of bug is invisible to a suite that only ever sees it: the Hero painting a
 // desktop layout and snapping to mobile after hydration, /admin 404ing under a subpath, a
 // link that navigated off the site. All of those shipped with this suite green.
-const PORT = Number(process.env.WEB_PORT ?? 3210);
 const TARGET = process.env.E2E_TARGET ?? 'dev';
+// The built-output targets bind a port of their own rather than the dev server's. Sharing it
+// meant that on a machine already running `npm run dev` the run either reused that server —
+// testing the wrong thing entirely — or refused to start. Neither is a useful default for a
+// check whose whole purpose is to exercise the build.
+const PORT = Number(process.env.WEB_PORT ?? (TARGET === 'dev' ? 3210 : 3262));
 const BASE_PATH = TARGET === 'subpath' ? (process.env.VITE_BASE ?? '/qalor-website-preview/') : '/';
 const BASE_URL = `http://localhost:${PORT}${BASE_PATH}`;
 
@@ -86,7 +90,11 @@ export default defineConfig({
         ? `npm run dev --workspace=packages/web -- --port ${PORT}`
         : `node scripts/serve-dist.mjs ${PORT} ${BASE_PATH}`,
     url: BASE_URL,
-    reuseExistingServer: !process.env.CI,
+    // Reuse only the dev server. For the dist and subpath targets the whole point is to
+    // exercise the built output, and reusing whatever already holds the port silently tests
+    // something else: a dev server sitting there turned the subpath run into four failures
+    // full of `/@vite/client` and `/src/main.tsx`, which say nothing about the build.
+    reuseExistingServer: TARGET === 'dev' && !process.env.CI,
     timeout: 120_000,
   },
 });
