@@ -115,8 +115,36 @@ try {
 const kb = (n) => `${(n / 1024).toFixed(1)}KB`;
 // Entry chunks are the ones Vite names off the HTML entry (index.html -> src/main.tsx);
 // everything else is a route-level lazy chunk, named after the component it splits from.
-const entry = readdirSync(assets).filter((n) => n.startsWith('index-'));
-const lazy = readdirSync(assets).filter((n) => !n.startsWith('index-') && BUDGET_GZIP[extname(n)]);
+/**
+ * The entry files index.html actually references, not every `index-*` in the directory.
+ *
+ * Reading the directory measured stale builds too: turbo restores `dist/**` from its cache,
+ * so hashes from earlier builds pile up beside the current ones and the budget sums two
+ * complete entry sets, reporting roughly double on a build well inside its budget. CI never
+ * sees it — a fresh checkout has no cache to restore — which makes it a defect that only ever
+ * appears locally, where the check should be most useful.
+ *
+ * It is also the more honest measurement: the budget is a claim about what a visitor
+ * downloads, and what a visitor downloads is what the document asks for.
+ */
+const html = readFileSync(join(WEB, 'dist/index.html'), 'utf8');
+const entry = [
+  ...new Set([...html.matchAll(/assets\/(index-[\w-]+\.(?:js|css))/g)].map((m) => m[1])),
+];
+if (entry.length === 0) {
+  fail('no entry assets referenced by dist/index.html — was the build run?');
+  process.exit(1);
+}
+
+// Same staleness one step removed: a lazy chunk is referenced from the entry bundle rather
+// than from the document, so that is where to look. A leftover chunk is referenced by nobody.
+const entryJs = entry
+  .filter((n) => extname(n) === '.js')
+  .map((n) => readFileSync(join(assets, n), 'utf8'))
+  .join('');
+const lazy = readdirSync(assets).filter(
+  (n) => !n.startsWith('index-') && BUDGET_GZIP[extname(n)] && entryJs.includes(n),
+);
 
 let initial = 0;
 for (const name of entry) {

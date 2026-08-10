@@ -112,6 +112,7 @@ Cloudinary account needed to try it. See [ADMIN.md](ADMIN.md).
 
 | Command | What it does |
 |---|---|
+| `npm run ci` | Everything CI runs, in CI's order (`-- --list` to see it without running) |
 | `npm run dev` | Start the Vite dev server and the admin API together |
 | `npm run build` | Typecheck-clean production build (`turbo run build`) |
 | `npm run typecheck` | `tsc --noEmit` across every package |
@@ -122,9 +123,26 @@ Cloudinary account needed to try it. See [ADMIN.md](ADMIN.md).
 | `npm run test:e2e:dist` | The same suite against the built, prerendered output |
 | `npm run test:e2e:subpath` | The subpath build (as GitHub Pages serves it) |
 | `npm run prerender` | Capture the built app's DOM into `index.html`; needs `npm run build` first |
-| `npm run check:budgets` | Gzipped initial-payload budget |
+| `npm run check:budgets` | Gzipped initial-payload budget, plus a per-chunk ceiling on lazy chunks |
 | `npm run check:lighthouse` | Lighthouse gate; needs `build` + `prerender` first |
 | `npm run hash-password` | Prints an `ADMIN_PASSWORD_HASH` for a password you type in |
+
+### Running the pipeline locally
+
+`npm run ci` reads its steps from `.github/workflows/ci.yml` rather than repeating them, so
+adding a CI step adds it here too, with each step's own `env:` — the subpath build needs
+`VITE_BASE`, and without it the next step tests a root-base build as though it were the
+subpath variant. Lighthouse is skipped, where a busy machine makes its numbers meaningless.
+
+### Ports
+
+The dev server is on **3210**. The built-output targets (`test:e2e:dist`,
+`test:e2e:subpath`) bind **3262** instead, and refuse to reuse whatever already holds it.
+
+Sharing the dev server's port was worse than it sounds: Playwright's `reuseExistingServer`
+happily reused a running dev server, so the subpath run tested *that* and failed with a list
+of `/@vite/client` and `/src/main.tsx` — four failures that said nothing about the build, on a
+build that was fine.
 
 ## Rendering & LCP
 
