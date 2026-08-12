@@ -1,246 +1,100 @@
 # Qalor Website
 
-The marketing site for Qalor — energy experts specializing in heating networks and
-sustainable energy solutions. A **TurboRepo** monorepo: **React**, **TypeScript** and
-**Vite** on the front, prerendered to static HTML for real content on first paint. CI
-gates every deploy on lint, typecheck, a Playwright layout/accessibility sweep, a
-Lighthouse audit and a bundle budget — nothing publishes unless all of it passes.
+The marketing site for Qalor — energy experts specialising in heating networks and sustainable
+energy solutions. Prerendered to static HTML so the first response is real content, with every
+section editable from an admin portal.
 
-**Live preview site:** https://artoriun.github.io/qalor-website-preview/
+**Live preview:** https://artoriun.github.io/qalor-website-preview/
 
 <img width="1440" alt="Qalor homepage in light mode" src=".github/readme-assets/homepage.png" />
 
 <img width="1440" alt="The same page in dark mode — the navigation bar and page background go dark while the Hero's orange fill is unchanged" src=".github/readme-assets/homepage-dark.png" />
 
-## Features
+---
 
-- Single-page marketing site — Hero, Team, Qalor/About, Werkproces, Projecten and Footer,
-  all anchor-scrolled from the nav. No client-side router: an earlier `react-router-dom`
-  dependency was dead weight (nothing ever rendered a `<Route>`) and got dropped in the
-  TypeScript port; the handful of extra routes below are plain `pathname` checks.
-- **Every section is admin-editable at `/admin`** — no code change or redeploy needed to
-  update copy, images, team members, or projects. See [ADMIN.md](ADMIN.md).
-- **WCAG AA dark mode**, toggled from the header. CSS custom properties on `:root`,
-  redefined under `[data-theme="dark"]` and set by a blocking inline script in
-  `index.html` before first paint — so there's no flash of the wrong theme and nothing for
-  React to disagree with on hydration. Light is the standard first visit regardless of the
-  OS setting; only an explicit toggle (persisted to `localStorage`) switches it. The
-  orange *fills* are deliberately theme-invariant: a button's own background against its
-  own label never depended on the page behind it.
-- **SEO landing pages** at `/warmtenet-tekening/`, `/warmtenet-ontwerp/`,
-  `/warmtenetberekening/` and `/warmtenet-business-case/` — one page per search intent,
-  each with its own copy, title, canonical and `Service` schema. See [SEO.md](SEO.md).
-- Prerendered on build: a real browser boots the built app on each route and writes the
-  resulting DOM back into that route's `index.html`, so a visitor's (or crawler's) first
-  response is actual content, not a blank shell waiting on JavaScript.
-- Team and project carousels share one component
-  (`packages/web/src/components/Carousel/`) — auto-advancing, drag/swipe-enabled,
-  infinite-wrap, with a pause button, arrow-key navigation, position dots and a
-  `prefers-reduced-motion` opt-out. The two used to hand-roll the same logic separately and
-  neither could be stopped, which fails WCAG 2.2.2 — and no automated check catches that,
-  since axe can't tell that something moves on a timer.
-- Team member CVs open in a modal rendered by the browser's own PDF viewer — an `<iframe>`,
-  no library. The previous `@react-pdf-viewer/core` + self-hosted pdf.js worker transferred
-  1.54MB to display a 102KB document; 1.09MB of that was the worker alone.
-- Below-the-fold sections (Team, About, Werkproces, Projecten, Footer) are
-  `React.lazy()` + `Suspense` — only Hero/Navbar, the above-the-fold content, are in the
-  initial bundle.
-- Images served from Cloudinary with automatic format/quality/size transforms
-  (`packages/web/src/lib/images.ts`).
-- Contact form component exists (`src/components/Contact`) but isn't wired into the page
-  yet — see the commented-out `<Contact />` in `App.tsx`.
+## Stack
 
-## Tech Stack
+| | |
+| --- | --- |
+| **Front end** | React, TypeScript, Vite |
+| **Back end** | Express, Firestore |
+| **Media** | Cloudinary |
+| **Tooling** | TurboRepo, Biome, Playwright, Lighthouse |
+| **Hosting** | FTP (production) · GitHub Pages (preview) |
 
-| Technology | Purpose |
-|------------|---------|
-| **React** + **TypeScript** + **Vite** | UI, type safety, build & dev server |
-| **Express** + **Firestore** + **JWT** | Admin API (`packages/api`) — see [ADMIN.md](ADMIN.md) |
-| **Cloudinary** | Image hosting/transforms, plus admin-portal uploads |
-| **TurboRepo** + npm workspaces | Monorepo build orchestration |
-| **AOS** | Scroll-reveal on below-the-fold sections only — never on the Hero, see [Rendering & LCP](#rendering--lcp) |
-| **Biome** | Linting & formatting |
-| **Playwright** | Layout tests, the accessibility sweep, and the prerenderer |
-| **axe-core** | WCAG rules, run inside the Playwright suite |
-| **Lighthouse** | CI gate on accessibility/SEO/best-practices |
+---
 
-## Project Structure
-
-```
-.nvmrc                    # Node 22 — required
-playwright.config.ts      # 3 viewport projects (desktop, mobile portrait, mobile landscape)
-biome.json                 # lint + format config
-turbo.json                  # build/dev/typecheck task graph
-e2e/
-├── fixtures.ts           # shared `test`: any uncaught page error fails the test
-├── layout.spec.ts        # overflow, one h1, footer bounds, CV modal, landscape geometry
-├── carousel.spec.ts       # drag threshold/snap-back, pause + resume, arrow keys, overflow
-├── touch.spec.ts          # touch-only behaviour (the rest of the matrix has no touch)
-├── subpath.spec.ts        # the build served from a project subpath
-└── a11y.spec.ts           # axe sweep at every viewport, light and dark, incl. the CV modal
-scripts/
-├── lib/static-server.mjs  # serves dist like the real host (base path, 404.html); shared
-├── serve-dist.mjs         # CLI wrapper, used as Playwright's webServer for the built output
-├── prerender.mjs          # captures each route's DOM into <route>/index.html, + sitemap/robots/llms
-├── check-budgets.mjs       # gzipped initial-payload budget
-└── check-lighthouse.mjs    # accessibility/SEO/best-practices thresholds on the built output
-packages/
-├── shared/src/index.ts    # typed content schema + bundled defaults for every section, and
-│                          #   SERVICE_PAGES (the SEO landing pages) — one file, no relative
-│                          #   imports; see the note at the top for why
-├── api/                   # admin API: Express + Firestore + JWT auth, see ADMIN.md
-│   └── src/routes/        # auth.ts, content.ts (singleton + list section merge logic)
-└── web/                   # the Vite/React app
-    ├── public/            # team CVs, favicon, .htaccess (SPA 404 fallback)
-    └── src/
-        ├── components/    # one folder per section, each reading from ContentContext
-        ├── context/       # ContentContext.tsx — bundle/prerender/live-API content merge
-        └── pages/         # Admin.tsx (lazy, /admin) and ServicePage.tsx (the SEO routes)
-```
-
-## Quick Start
+## Quick start
 
 ```bash
 npm install
-npm run dev            # web on http://localhost:5173, api on http://localhost:4000
+npm run dev      # web + API
 ```
 
-The admin portal (`/admin`) works out of the box with local placeholders — no Firestore or
-Cloudinary account needed to try it. See [ADMIN.md](ADMIN.md).
+The admin portal at `/admin` works out of the box with local placeholders — no Firestore or
+Cloudinary account needed to try it. See [ADMIN.md](ADMIN.md) for the full setup.
 
-## Scripts
+### Scripts
 
-| Command | What it does |
-|---|---|
-| `npm run ci` | Everything CI runs, in CI's order (`-- --list` to see it without running) |
-| `npm run dev` | Start the Vite dev server and the admin API together |
-| `npm run build` | Typecheck-clean production build (`turbo run build`) |
-| `npm run typecheck` | `tsc --noEmit` across every package |
-| `npm run check` | Biome lint + format check |
-| `npm run format` | Biome format, writes fixes |
-| `npm run test:api` | API unit tests (auth, content merge/override, rate limiting) |
-| `npm run test:e2e` | Playwright suite against the dev server |
-| `npm run test:e2e:dist` | The same suite against the built, prerendered output |
-| `npm run test:e2e:subpath` | The subpath build (as GitHub Pages serves it) |
-| `npm run prerender` | Capture the built app's DOM into `index.html`; needs `npm run build` first |
-| `npm run check:budgets` | Gzipped initial-payload budget, plus a per-chunk ceiling on lazy chunks |
-| `npm run check:lighthouse` | Lighthouse gate; needs `build` + `prerender` first |
-| `npm run hash-password` | Prints an `ADMIN_PASSWORD_HASH` for a password you type in |
+```bash
+npm run build            # production build
+npm run prerender        # capture each route's DOM into its own index.html
+npm run ci               # everything CI runs, in order
+npm run test:e2e         # Playwright layout and accessibility sweep
+npm run check:budgets    # gzipped payload budget
+npm run check:lighthouse # accessibility / SEO / best-practices gate
+npm run hash-password    # prints an ADMIN_PASSWORD_HASH
+```
 
-### Running the pipeline locally
+---
 
-`npm run ci` reads its steps from `.github/workflows/ci.yml` rather than repeating them, so
-adding a CI step adds it here too, with each step's own `env:` — the subpath build needs
-`VITE_BASE`, and without it the next step tests a root-base build as though it were the
-subpath variant. Lighthouse is skipped, where a busy machine makes its numbers meaningless.
+## Features
 
-### Ports
+- **Single-page marketing site** — Hero, Team, About, Werkproces, Projecten and Footer, all
+  anchor-scrolled from the nav
+- **Every section is admin-editable** at `/admin` — copy, images, team members and projects
+  change without a redeploy
+- **SEO landing pages** at `/warmtenet-tekening/`, `/warmtenet-ontwerp/`,
+  `/warmtenetberekening/` and `/warmtenet-business-case/`, one per search intent, each with
+  its own copy, title, canonical and `Service` schema. See [SEO.md](SEO.md)
+- **WCAG AA dark mode** from the header, set by a blocking inline script before first paint so
+  there is no flash of the wrong theme. Light is the standard first visit regardless of the OS
+  setting
+- **Shared carousel** for Team and Projecten — auto-advancing, drag and swipe, infinite wrap,
+  pause button, arrow-key navigation and a `prefers-reduced-motion` opt-out
+- **Team CVs** open in a modal rendered by the browser's own PDF viewer, no library
+- **Images** from Cloudinary with automatic format, quality and size transforms
 
-The dev server is on **3210**. The built-output targets (`test:e2e:dist`,
-`test:e2e:subpath`) bind **3262** instead, and refuse to reuse whatever already holds it.
+---
 
-Sharing the dev server's port was worse than it sounds: Playwright's `reuseExistingServer`
-happily reused a running dev server, so the subpath run tested *that* and failed with a list
-of `/@vite/client` and `/src/main.tsx` — four failures that said nothing about the build, on a
-build that was fine.
+## Rendering
 
-## Rendering & LCP
+Hero and Navbar are eager, plain and undeferred, and carry no scroll-reveal: they are the
+above-the-fold content, so deferring or fading them would delay the largest contentful paint
+by exactly the length of the animation. Sections further down keep their reveal treatment.
 
-The Hero section used to be both `React.lazy()`-loaded behind a Suspense fallback *and*
-marked `data-aos="fade-up"` — meaning first paint was a loading spinner, and even once
-loaded, AOS held it at `opacity: 0` until a scroll-triggered reveal fired. Both are gone:
-Hero and Navbar are eager, plain, undeferred, and carry no `data-aos`. Team lost its
-`data-aos` too — it's the first below-the-fold section, close enough to the fold that on
-some viewports it was still mid-fade when scanned, which showed up as a real,
-non-deterministic color-contrast failure (`e2e/a11y.spec.ts` caught it) and would have
-made the Lighthouse accessibility gate flaky in CI. Below-the-fold sections further down
-the page (About, Werkproces, Projecten, Footer) keep their scroll-reveal treatment —
-they're far enough down that this isn't a risk.
+`npm run prerender` boots the built app in a real browser on each route and writes the
+resulting DOM back into that route's `index.html`. It gates itself: the build fails if a route
+captures almost no text, logs a hydration error, or lays out differently once hydrated than it
+did on first paint.
+
+---
 
 ## Testing
 
-`npm run test:e2e` runs layout assertions (no horizontal overflow, exactly one `h1`, nothing
-renders past the footer, the hamburger menu works, the CV modal opens and closes, and — at
-the landscape viewport — that the Qalor section stacks and the Werkproces steps are centred)
-plus an axe-core accessibility sweep, across desktop and two mobile viewports. The sweep
-covers the home page, a service landing page, the admin sign-in screen and the CV modal, each
-in **both light and dark mode** — the dark pass flips the real header toggle rather than
-pre-seeding `localStorage`, so it exercises the toggle itself as well as the tokens
-underneath it.
+`npm run ci` runs the pipeline in CI's order: Biome, `tsc`, API tests, a Playwright layout and
+accessibility sweep, the suite again against the built output and its subpath variant, a
+gzipped bundle budget, and Lighthouse.
 
-Two things about the suite are worth knowing before adding to it:
+Accessibility, SEO and best practices are gated at 100, and CLS at 0.05. Performance is
+measured and printed but not gated — a shared runner's timings vary by more than the thing
+being measured, while CLS describes the markup rather than the machine.
 
-- **Every test fails on an uncaught page error** (`e2e/fixtures.ts`). That only helps for
-  code a test actually reaches, though — a `TypeError` thrown on every header-logo press went
-  unnoticed for exactly as long as no test pressed the logo.
-- **Only the `mobile-touch` project has touch.** The three viewport projects are Desktop
-  Chrome at a smaller size with `isMobile: false`, so they report `pointer: fine` and fire no
-  touch events. Anything that behaves differently under a finger belongs in
-  `e2e/touch.spec.ts`, or it will pass here and fail on a phone.
-
-`npm run check:lighthouse` audits the built, prerendered output and gates accessibility, SEO
-and best-practices at 100, plus CLS at 0.05. Performance is measured and printed but never
-gated: a shared CI runner's timings vary by more than the thing being measured. CLS is gated
-because it describes how much the layout moved, which is a property of the markup rather than
-of the machine. `npm run check:budgets` is the other deterministic half — a gzipped ceiling on
-the initial payload, and one per lazy chunk so an expensive on-demand import can't go
-unnoticed the way a 1.5MB PDF viewer once did.
-
-`npm run prerender` gates itself too: it fails the build if a route captures almost no text,
-if any route logs a React hydration error, or if a route **lays out differently once
-hydrated** than it did on first paint. That last one exists because a React error is not the
-only way prerendering goes wrong: a component that decides its layout from
-`window.innerWidth` hydrates "cleanly" while a phone visibly watches the heading jump from
-4rem to 3rem, because the prerendered HTML was captured at a desktop viewport.
-
-The suite runs three times in CI: against the dev server, against the built and prerendered
-output, and against a build made for the GitHub Pages project subpath. The last two are not
-redundant — prerendering and base paths are where several bugs have lived, and neither
-exists on the dev server.
+---
 
 ## Deployment
 
-CI's `deploy` job builds, prerenders, and uploads `packages/web/dist/` over FTP to the
-live host on every push to `master` — never from a pull request, and additionally on a
-weekly schedule so admin-portal edits reach crawlers even without a manual redeploy (see
-[ADMIN.md](ADMIN.md)). Needs repo secrets (**Settings → Secrets and variables → Actions**):
+Production deploys by FTP from `master`, and only after every check passes. The GitHub Pages
+preview above is built from `main` with a base path and a `noindex`.
 
-- `FTP_SERVER`, `FTP_USERNAME`, `FTP_PASSWORD`
-- Optionally a repo **variable** `FTP_SERVER_DIR` if the account's FTP root isn't the
-  site's document root (defaults to `/`)
-- `VITE_API_URL`, once the admin API is deployed — see [ADMIN.md](ADMIN.md) for the full
-  walkthrough (Firestore, Cloudinary, Render, all still on local placeholders today)
-
-**The workflow triggers on `master`.** This repository's default branch is `main`, so pushes
-here do not start a CI run — use **Actions → CI → Run workflow**, or add `main` to the
-trigger. Worth knowing before trusting a green checkmark that was never asked for.
-
-### The GitHub Pages preview
-
-<https://artoriun.github.io/qalor-website-preview/> is published from the `gh-pages` branch,
-built by hand rather than by CI:
-
-```bash
-cd packages/web && rm -rf dist
-VITE_BASE=/qalor-website-preview/ VITE_API_URL=<api> npm run build
-VITE_BASE=/qalor-website-preview/ NOINDEX=1 npm run prerender
-# then copy dist/ onto gh-pages (plus an empty .nojekyll) and push
-```
-
-Do **not** copy `index.html` over `404.html` afterwards. `prerender.mjs` writes `404.html`
-deliberately as the plain, un-prerendered shell so that a deep link boots straight into its
-own route; replacing it with the prerendered home page makes `/admin` flash the home page
-before React swaps it out.
-
-Two build-time env vars matter outside CI:
-
-| Variable | Effect |
-|---|---|
-| `VITE_BASE` | Base path. `/` for the real domain; `/qalor-website-preview/` for the GitHub Pages preview. Read by `vite.config.ts` **and** `prerender.mjs`, so build and preview can't disagree. |
-| `NOINDEX=1` | Adds a `robots` noindex to every prerendered page and drops the sitemap line from `robots.txt`. Set on preview builds so they don't compete with qalor.nl — see [SEO.md](SEO.md). |
-
-## Licence
-
-© Qalor. All rights reserved. This code is proprietary — it's shared here for
-portfolio/demonstration purposes only and isn't licensed for reuse, redistribution, or
-modification.
+**Node 22** is required (`.nvmrc`).
