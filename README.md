@@ -12,6 +12,19 @@ section editable from an admin portal.
 
 ---
 
+## Lighthouse
+
+Measured against the production build. CI runs the same audit on every push and gates
+accessibility, best practices and SEO at 100.
+
+<img src=".github/readme-assets/lighthouse-mobile.png" alt="Lighthouse mobile: Performance 96, Accessibility 100, Best Practices 100, SEO 100" width="440"><br>
+**Mobile** — LCP 2.5s · CLS 0 · TBT 0ms
+
+<img src=".github/readme-assets/lighthouse-desktop.png" alt="Lighthouse desktop: Performance 99, Accessibility 100, Best Practices 100, SEO 100" width="440"><br>
+**Desktop** — LCP 0.6s · CLS 0.002 · TBT 90ms
+
+---
+
 ## Stack
 
 | | |
@@ -98,3 +111,10 @@ Production deploys by FTP from `master`, and only after every check passes. The 
 preview above is built from `main` with a base path and a `noindex`.
 
 **Node 22** is required (`.nvmrc`).
+
+---
+
+## Licence
+
+All rights reserved — see [LICENSE](LICENSE). The source is published to be read, not reused:
+this is client work, and the copy, photographs and brand assets belong to Qalor.
