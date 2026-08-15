@@ -17,11 +17,11 @@ section editable from an admin portal.
 Measured against the production build. CI runs the same audit on every push and gates
 accessibility, best practices and SEO at 100.
 
-<img src=".github/readme-assets/lighthouse-mobile.png" alt="Lighthouse mobile: Performance 96, Accessibility 100, Best Practices 100, SEO 100" width="440"><br>
-**Mobile** — LCP 2.5s · CLS 0 · TBT 0ms
+<img src=".github/readme-assets/lighthouse-mobile.png" alt="Lighthouse mobile: Performance 95, Accessibility 100, Best Practices 100, SEO 100" width="440"><br>
+**Mobile** — LCP 2.6s · CLS 0 · TBT 0ms
 
-<img src=".github/readme-assets/lighthouse-desktop.png" alt="Lighthouse desktop: Performance 99, Accessibility 100, Best Practices 100, SEO 100" width="440"><br>
-**Desktop** — LCP 0.6s · CLS 0.002 · TBT 90ms
+<img src=".github/readme-assets/lighthouse-desktop.png" alt="Lighthouse desktop: Performance 100, Accessibility 100, Best Practices 100, SEO 100" width="440"><br>
+**Desktop** — LCP 0.6s · CLS 0.002 · TBT 0ms
 
 ---
 
@@ -53,6 +53,7 @@ Cloudinary account needed to try it. See [ADMIN.md](ADMIN.md) for the full setup
 npm run build            # production build
 npm run prerender        # capture each route's DOM into its own index.html
 npm run ci               # everything CI runs, in order
+npm run test             # API and unit tests
 npm run test:e2e         # Playwright layout and accessibility sweep
 npm run check:budgets    # gzipped payload budget
 npm run check:lighthouse # accessibility / SEO / best-practices gate
@@ -76,7 +77,7 @@ npm run hash-password    # prints an ADMIN_PASSWORD_HASH
 - **Shared carousel** for Team and Projecten — auto-advancing, drag and swipe, infinite wrap,
   pause button, arrow-key navigation and a `prefers-reduced-motion` opt-out
 - **Team CVs** open in a modal rendered by the browser's own PDF viewer, no library
-- **Images** from Cloudinary with automatic format, quality and size transforms
+- **Images** from Cloudinary, requested at the size they are displayed and served as WebP
 
 ---
 
@@ -91,13 +92,20 @@ resulting DOM back into that route's `index.html`. It gates itself: the build fa
 captures almost no text, logs a hydration error, or lays out differently once hydrated than it
 did on first paint.
 
+### Replacing an image
+
+Overwrite the public ID in Cloudinary with `invalidate` on, then bump `ASSET_VERSION` in
+`packages/shared/src/index.ts`. The delivery URLs carry that version, and without a change to
+it the path is identical before and after — browsers keep serving what they already hold for
+the full year these assets are cached for.
+
 ---
 
 ## Testing
 
-`npm run ci` runs the pipeline in CI's order: Biome, `tsc`, API tests, a Playwright layout and
-accessibility sweep, the suite again against the built output and its subpath variant, a
-gzipped bundle budget, and Lighthouse.
+`npm run ci` runs the pipeline in CI's order: Biome, `tsc`, API and unit tests, a Playwright
+layout and accessibility sweep, the suite again against the built output and its subpath
+variant, a gzipped bundle budget, and Lighthouse.
 
 Accessibility, SEO and best practices are gated at 100, and CLS at 0.05. Performance is
 measured and printed but not gated — a shared runner's timings vary by more than the thing
