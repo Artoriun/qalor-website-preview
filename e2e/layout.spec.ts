@@ -147,10 +147,16 @@ test('the header logo returns to its resting size after a press', async ({ page 
     .toBe('scale(1)');
 });
 
+/**
+ * The same property as e2e/images.spec.ts, but against the real bundled content rather than
+ * injected URLs: that one proves optimizeUrl behaves, this one proves what the site actually
+ * ships is versioned — the case where someone hand-adds an unversioned URL to @qalor/shared.
+ */
 test('every Cloudinary image is requested at a versioned URL', async ({ page }) => {
   await page.goto('/');
-  const unversioned = await page.evaluate(() => {
+  const { bad, seen } = await page.evaluate(() => {
     const bad: string[] = [];
+    let seen = 0;
     // Includes the hero's preload link, not just <img>: scripts/prerender.mjs builds that URL
     // itself, so it can drift from optimizeUrl() — and a preload that disagrees with the
     // <img> downloads the hero twice instead of getting a head start on it.
@@ -166,15 +172,18 @@ test('every Cloudinary image is requested at a versioned URL', async ({ page }) 
       // itself contains one (`q_auto,w_700`), so a naive split cuts every URL in half and
       // the test fails on its own parsing.
       for (const candidate of attrs.match(/https?:\/\/\S+?(?=\s|$)/g) ?? []) {
-        if (candidate.includes('/image/upload/') && !/\/v\d+\//.test(candidate)) {
-          bad.push(candidate);
-        }
+        if (!candidate.includes('/image/upload/')) continue;
+        seen++;
+        if (!/\/v\d+\//.test(candidate)) bad.push(candidate);
       }
     }
-    return bad;
+    return { bad, seen };
   });
+  // Nothing to inspect would otherwise read as success: this assertion is about what the
+  // page really requests, so an empty page passes it vacuously.
+  expect(seen, 'no Cloudinary images on the page — this test checked nothing').toBeGreaterThan(0);
   // Without a version the path is identical before and after an image is replaced, so
   // browsers keep serving the old bytes for the full year these are cached for — the CDN
   // invalidation on upload does nothing for anyone who already loaded the page.
-  expect(unversioned, 'unversioned Cloudinary URLs').toEqual([]);
+  expect(bad, 'unversioned Cloudinary URLs').toEqual([]);
 });
