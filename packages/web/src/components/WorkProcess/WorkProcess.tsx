@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useContent } from '../../context/ContentContext';
-import { optimizeUrl } from '../../lib/images';
+import { STEP_W, dprSrcSet, optimizeUrl } from '../../lib/images';
 import './WorkProcess.css';
 
 // Every step shares one look (see the note in the STEPS array this replaced) — not part of
@@ -194,7 +194,8 @@ const WorkProcess = () => {
                 }}
               >
                 <img
-                  src={optimizeUrl(step.image, 550)}
+                  src={optimizeUrl(step.image, STEP_W)}
+                  srcSet={dprSrcSet(step.image, STEP_W)}
                   loading="lazy"
                   alt={step.alt}
                   style={{
@@ -322,7 +323,8 @@ const WorkProcess = () => {
                       </div>
 
                       <img
-                        src={optimizeUrl(step.image, 550)}
+                        src={optimizeUrl(step.image, STEP_W)}
+                        srcSet={dprSrcSet(step.image, STEP_W)}
                         loading="lazy"
                         alt={step.alt}
                         style={{

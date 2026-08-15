@@ -42,3 +42,26 @@ export function fullBleedSrcSet(url: string): string {
   if (!url.includes('/image/upload/')) return '';
   return FULL_BLEED_WIDTHS.map((w) => `${optimizeUrl(url, w)} ${w}w`).join(', ');
 }
+
+/**
+ * Width for a work-process step image.
+ *
+ * The step box is 550x300 with `object-fit: cover`, so for anything wider than 1.83:1 the
+ * *height* binds, not the width: workprocess-berekening is 2.34:1, so filling 300px of height
+ * needs ~703px of width. Asking for 550 delivered a 550x235 image that the browser then
+ * stretched by 1.28 to cover the box — and by another 2 on a high-DPR screen. That is why
+ * replacing the sources with upscaled ones changed nothing visible: delivery was the cap, not
+ * the original.
+ */
+export const STEP_W = 750;
+
+/**
+ * `srcset` for a fixed-size image, as DPR candidates rather than widths.
+ *
+ * `w` descriptors need a `sizes` attribute to mean anything; these boxes are a fixed CSS size,
+ * so 1x/2x says exactly what is needed and keeps the small file on ordinary screens.
+ */
+export function dprSrcSet(url: string, w: number): string {
+  if (!url.includes('/image/upload/')) return '';
+  return `${optimizeUrl(url, w)} 1x, ${optimizeUrl(url, w * 2)} 2x`;
+}

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
 import { ASSET_VERSION } from '@qalor/shared';
-import { FULL_BLEED_W, fullBleedSrcSet, optimizeUrl } from './images';
+import { FULL_BLEED_W, STEP_W, dprSrcSet, fullBleedSrcSet, optimizeUrl } from './images';
 
 /**
  * These transforms are the difference between a multi-megabyte original and a small WebP, and
@@ -71,5 +71,25 @@ describe('fullBleedSrcSet', () => {
 
   test('is empty for URLs that cannot be resized, so the plain src wins', () => {
     assert.equal(fullBleedSrcSet('blob:http://localhost:3210/abc'), '');
+  });
+});
+
+describe('dprSrcSet', () => {
+  test('offers a 2x candidate at twice the width', () => {
+    const [one, two] = dprSrcSet(RAW, STEP_W).split(', ');
+    assert.ok(one.endsWith(' 1x') && two.endsWith(' 2x'), 'descriptors must be 1x and 2x');
+    assert.ok(one.includes(`w_${STEP_W}/`), '1x must be the layout width');
+    assert.ok(two.includes(`w_${STEP_W * 2}/`), '2x must be double');
+  });
+
+  test('is wide enough to cover the step box without upscaling', () => {
+    // The box is 550x300 with object-fit: cover, so the widest step image (2.34:1) needs
+    // 300 * 2.34 = 703px to fill the height. Asking for 550 is what made the upscaled
+    // sources look no better than the originals they replaced.
+    assert.ok(STEP_W >= 703, `STEP_W ${STEP_W} is too narrow to cover a 300px-tall box`);
+  });
+
+  test('is empty for URLs that cannot be resized', () => {
+    assert.equal(dprSrcSet('blob:http://localhost:3210/abc', 750), '');
   });
 });
