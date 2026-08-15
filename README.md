@@ -81,18 +81,7 @@ npm run hash-password    # prints an ADMIN_PASSWORD_HASH
 
 ---
 
-## Rendering
-
-Hero and Navbar are eager, plain and undeferred, and carry no scroll-reveal: they are the
-above-the-fold content, so deferring or fading them would delay the largest contentful paint
-by exactly the length of the animation. Sections further down keep their reveal treatment.
-
-`npm run prerender` boots the built app in a real browser on each route and writes the
-resulting DOM back into that route's `index.html`. It gates itself: the build fails if a route
-captures almost no text, logs a hydration error, or lays out differently once hydrated than it
-did on first paint.
-
-### Replacing an image
+## Replacing an image
 
 Overwrite the public ID in Cloudinary with `invalidate` on, then bump `ASSET_VERSION` in
 `packages/shared/src/index.ts`. The delivery URLs carry that version, and without a change to
@@ -106,10 +95,6 @@ the full year these assets are cached for.
 `npm run ci` runs the pipeline in CI's order: Biome, `tsc`, API and unit tests, a Playwright
 layout and accessibility sweep, the suite again against the built output and its subpath
 variant, a gzipped bundle budget, and Lighthouse.
-
-Accessibility, SEO and best practices are gated at 100, and CLS at 0.05. Performance is
-measured and printed but not gated — a shared runner's timings vary by more than the thing
-being measured, while CLS describes the markup rather than the machine.
 
 ---
 
