@@ -15,6 +15,8 @@
     "check": "biome check .",
     "preview": "npm run preview --workspace=packages/web",
     "test:api": "node --import tsx --test \"packages/api/src/**/*.test.ts\"",
+    "test:unit": "node --import tsx --test \"packages/web/src/**/*.test.ts\" \"packages/shared/src/**/*.test.ts\"",
+    "test": "npm run test:api && npm run test:unit",
     "test:e2e": "playwright test",
     "test:e2e:dist": "E2E_TARGET=dist playwright test",
     "test:e2e:subpath": "E2E_TARGET=subpath playwright test",
