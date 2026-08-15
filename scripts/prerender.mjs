@@ -24,7 +24,13 @@ import { spawn } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { chromium } from '@playwright/test';
-import { DEFAULT_SITE_CONTENT, SERVICE_PAGES, SITE_DESCRIPTION, SITE_TITLE } from '@qalor/shared';
+import {
+  ASSET_VERSION,
+  DEFAULT_SITE_CONTENT,
+  SERVICE_PAGES,
+  SITE_DESCRIPTION,
+  SITE_TITLE,
+} from '@qalor/shared';
 
 // Where the site will actually live. Used for the canonical link and sitemap.
 const SITE = (process.env.SITE_URL ?? 'https://qalor.nl').replace(/\/$/, '');
@@ -291,7 +297,13 @@ const headFor = (route) => {
  */
 const heroOptimize = (w) =>
   content.hero.image
-    .replace('/image/upload/', `/image/upload/q_auto,w_${w}/`)
+    .replace(
+      '/image/upload/',
+      // ASSET_VERSION comes from @qalor/shared so this and optimizeUrl() cannot drift apart:
+      // a preload that disagrees with the <img> by even one path segment is a second
+      // download of the hero, not a head start on the first.
+      `/image/upload/q_auto,w_${w}/${/\/image\/upload\/(?:[^/]+\/)*v\d+\//.test(content.hero.image) ? '' : `${ASSET_VERSION}/`}`,
+    )
     .replace(/\.(jpe?g|png)$/i, '.webp');
 const heroSrcSet = [480, 768, 1024, 1200].map((w) => `${heroOptimize(w)} ${w}w`).join(', ');
 const preloadTag = `<link rel="preload" as="image" href="${esc(heroOptimize(1024))}" imagesrcset="${esc(heroSrcSet)}" imagesizes="(max-width: 768px) 100vw, 50vw" fetchpriority="high" />`;
