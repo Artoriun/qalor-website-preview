@@ -2,7 +2,7 @@
 /**
  * Two build-time guards.
  *
- * 1. Cloudinary image URLs must go through optimizeUrl()/fullBleedSrcSet()
+ * 1. Cloudinary image URLs must go through optimizeUrl()/fullBleedSrcSet()/dprSrcSet()
  *    (packages/web/src/lib/images.ts). The bug this exists to catch already happened
  *    once: a raw Cloudinary URL constant used directly in `src=` served the untransformed
  *    original (several MB, no f_auto/q_auto) — the thing that was still true even after
@@ -39,7 +39,7 @@ const fail = (msg) => {
   failed = true;
 };
 
-// ---- 1. Cloudinary URLs must go through optimizeUrl()/fullBleedSrcSet() ----------------
+// ---- 1. Cloudinary URLs must go through optimizeUrl()/fullBleedSrcSet()/dprSrcSet() ----
 const walk = (dir) =>
   readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
     const p = join(dir, e.name);
@@ -93,9 +93,9 @@ for (const file of [...walk(join(WEB, 'src')), ...walk(SHARED)]) {
       if (new RegExp(`^\\s*(const\\s+${name}\\s*=|${name}\\s*:)`).test(line)) continue;
       if (!/\bsrc=\{|\bsrcSet=\{|url\(\$\{/.test(line)) continue;
       cloudinaryUsages++;
-      if (!/optimizeUrl\(|fullBleedSrcSet\(/.test(line)) {
+      if (!/optimizeUrl\(|fullBleedSrcSet\(|dprSrcSet\(/.test(line)) {
         fail(
-          `${file.replace(WEB, 'packages/web/').replace(SHARED, 'packages/shared/')}:${i + 1} uses ${name} without optimizeUrl()/fullBleedSrcSet(): ${line.trim()}`,
+          `${file.replace(WEB, 'packages/web/').replace(SHARED, 'packages/shared/')}:${i + 1} uses ${name} without optimizeUrl()/fullBleedSrcSet()/dprSrcSet(): ${line.trim()}`,
         );
       }
     }

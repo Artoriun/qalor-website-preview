@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useContent } from '../../context/ContentContext';
-import { STEP_W, dprSrcSet, optimizeUrl } from '../../lib/images';
+import { dprSrcSet, optimizeUrl, STEP_W } from '../../lib/images';
 import './WorkProcess.css';
 
 // Every step shares one look (see the note in the STEPS array this replaced) — not part of

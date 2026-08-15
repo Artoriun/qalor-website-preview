@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useContent } from '../../context/ContentContext';
-import { optimizeUrl } from '../../lib/images';
+import { ABOUT_W, dprSrcSet, optimizeUrl } from '../../lib/images';
 
 const About = () => {
   const { content } = useContent();
@@ -153,7 +153,8 @@ const About = () => {
 
           {/* Right side - Image */}
           <img
-            src={optimizeUrl(image, 600)}
+            src={optimizeUrl(image, ABOUT_W)}
+            srcSet={dprSrcSet(image, ABOUT_W)}
             alt="Peter & Huub"
             loading="lazy"
             data-aos="zoom-in"

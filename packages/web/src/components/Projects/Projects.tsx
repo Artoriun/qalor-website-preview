@@ -1,4 +1,5 @@
 import type { Project } from '@qalor/shared';
+import type { CSSProperties } from 'react';
 import { useContent } from '../../context/ContentContext';
 import { optimizeUrl } from '../../lib/images';
 import { Carousel } from '../Carousel/Carousel';
@@ -19,9 +20,15 @@ const ProjectCard = ({ project }: { project: Project }) => {
   return (
     <article
       className="project-card"
-      style={{
-        backgroundImage: `url(${optimizeUrl(project.image, CARD_MAX_WIDTH * 2)})`,
-      }}
+      style={
+        {
+          // Two custom properties rather than image-set(): a browser without image-set()
+          // drops the whole declaration and shows no photo at all, whereas an unmatched
+          // media query just leaves the 1x value in place.
+          '--card-image': `url(${optimizeUrl(project.image, CARD_MAX_WIDTH)})`,
+          '--card-image-2x': `url(${optimizeUrl(project.image, CARD_MAX_WIDTH * 3, true)})`,
+        } as CSSProperties
+      }
     >
       {/* Fixed white on a dark scrim, not theme tokens: this text sits on an arbitrary
           photo, so its contrast has nothing to do with the page background and must not

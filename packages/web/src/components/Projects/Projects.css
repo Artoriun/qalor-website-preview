@@ -42,7 +42,18 @@
   background-position: center;
   background-size: cover;
   background-repeat: no-repeat;
+  /* Both values are set per card in Projects.tsx. The card is 350x280 with
+     background-size: cover, so a landscape photo is bound by its height and needs ~500px
+     even at 1x — which is why the dense variant is a 3x step rather than 2x, capped at the
+     source's own width by c_limit so the smaller photos are not upscaled for nothing. */
+  background-image: var(--card-image);
   box-shadow: 0 8px 25px rgba(241, 136, 37, 0.15);
+}
+
+@media (min-resolution: 1.5dppx) {
+  .project-card {
+    background-image: var(--card-image-2x);
+  }
 }
 
 @media (max-width: 768px) {
