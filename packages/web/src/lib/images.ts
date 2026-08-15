@@ -1,4 +1,5 @@
 import { ASSET_VERSION } from '@qalor/shared';
+
 /**
  * Inject Cloudinary format/quality/resize transforms into an image URL.
  *
@@ -18,7 +19,7 @@ import { ASSET_VERSION } from '@qalor/shared';
 /** Cloudinary URLs that already carry their own version, which must not be doubled up. */
 const HAS_VERSION = /\/image\/upload\/(?:[^/]+\/)*v\d+\//;
 
-export function optimizeUrl(url: string, w = 400): string {
+export function optimizeUrl(url: string, w = 400, limit = false): string {
   if (!url.includes('/image/upload/')) return url;
   // Cloudinary 400s on a fractional width — callers pass computed values (slideWidth * 2,
   // where slideWidth comes from window.innerWidth * 0.9), which aren't always integers.
@@ -26,7 +27,13 @@ export function optimizeUrl(url: string, w = 400): string {
   // Portal uploads come back from Cloudinary with a version already in the path; only the
   // bundled URLs need one added.
   const version = HAS_VERSION.test(url) ? '' : `${ASSET_VERSION}/`;
-  const resized = url.replace('/image/upload/', `/image/upload/q_auto,w_${width}/${version}`);
+  // c_limit caps at the source's own width instead of upscaling past it: several project
+  // photos are under 1000px, and asking for more returns a bigger file with no more detail.
+  const crop = limit ? ',c_limit' : '';
+  const resized = url.replace(
+    '/image/upload/',
+    `/image/upload/q_auto,w_${width}${crop}/${version}`,
+  );
   return resized.replace(/\.(jpe?g|png)$/i, '.webp');
 }
 
@@ -65,3 +72,15 @@ export function dprSrcSet(url: string, w: number): string {
   if (!url.includes('/image/upload/')) return '';
   return `${optimizeUrl(url, w)} 1x, ${optimizeUrl(url, w * 2)} 2x`;
 }
+
+/**
+ * Width for the About portrait.
+ *
+ * It sits in a half-column of the 1400px grid at 450px tall with `object-fit: cover`, and the
+ * photo is portrait (0.75:1) — narrower than the box, so the *width* binds at ~700px. The
+ * previous fixed 600 was under that even at 1x, and less than half what a 2x screen needs.
+ */
+export const ABOUT_W = 700;
+
+/** Width of a carousel card (Projects, Team). */
+export const CARD_W = 350;

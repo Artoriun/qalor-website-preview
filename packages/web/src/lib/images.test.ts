@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
 import { ASSET_VERSION } from '@qalor/shared';
-import { FULL_BLEED_W, STEP_W, dprSrcSet, fullBleedSrcSet, optimizeUrl } from './images';
+import { dprSrcSet, FULL_BLEED_W, fullBleedSrcSet, optimizeUrl, STEP_W } from './images';
 
 /**
  * These transforms are the difference between a multi-megabyte original and a small WebP, and
