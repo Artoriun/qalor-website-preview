@@ -146,3 +146,35 @@ test('the header logo returns to its resting size after a press', async ({ page 
     .poll(() => logo.evaluate((el) => (el as HTMLElement).style.transform), { timeout: 3000 })
     .toBe('scale(1)');
 });
+
+test('every Cloudinary image is requested at a versioned URL', async ({ page }) => {
+  await page.goto('/');
+  const unversioned = await page.evaluate(() => {
+    const bad: string[] = [];
+    // Includes the hero's preload link, not just <img>: scripts/prerender.mjs builds that URL
+    // itself, so it can drift from optimizeUrl() — and a preload that disagrees with the
+    // <img> downloads the hero twice instead of getting a head start on it.
+    const sources = document.querySelectorAll('img, link[rel="preload"][as="image"]');
+    for (const img of sources) {
+      const attrs = [
+        img.getAttribute('src') ?? '',
+        img.getAttribute('srcset') ?? '',
+        img.getAttribute('href') ?? '',
+        img.getAttribute('imagesrcset') ?? '',
+      ].join(' ');
+      // Match whole URLs rather than splitting the srcset on commas: the transformation
+      // itself contains one (`q_auto,w_700`), so a naive split cuts every URL in half and
+      // the test fails on its own parsing.
+      for (const candidate of attrs.match(/https?:\/\/\S+?(?=\s|$)/g) ?? []) {
+        if (candidate.includes('/image/upload/') && !/\/v\d+\//.test(candidate)) {
+          bad.push(candidate);
+        }
+      }
+    }
+    return bad;
+  });
+  // Without a version the path is identical before and after an image is replaced, so
+  // browsers keep serving the old bytes for the full year these are cached for — the CDN
+  // invalidation on upload does nothing for anyone who already loaded the page.
+  expect(unversioned, 'unversioned Cloudinary URLs').toEqual([]);
+});

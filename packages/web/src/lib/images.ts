@@ -1,3 +1,4 @@
+import { ASSET_VERSION } from '@qalor/shared';
 /**
  * Inject Cloudinary format/quality/resize transforms into an image URL.
  *
@@ -14,12 +15,18 @@
  * correctly, every time. WebP alone (no AVIF fallback) is an acceptable trade for that
  * reliability; browser support for WebP alone is effectively universal now.
  */
+/** Cloudinary URLs that already carry their own version, which must not be doubled up. */
+const HAS_VERSION = /\/image\/upload\/(?:[^/]+\/)*v\d+\//;
+
 export function optimizeUrl(url: string, w = 400): string {
   if (!url.includes('/image/upload/')) return url;
   // Cloudinary 400s on a fractional width — callers pass computed values (slideWidth * 2,
   // where slideWidth comes from window.innerWidth * 0.9), which aren't always integers.
   const width = Math.round(w);
-  const resized = url.replace('/image/upload/', `/image/upload/q_auto,w_${width}/`);
+  // Portal uploads come back from Cloudinary with a version already in the path; only the
+  // bundled URLs need one added.
+  const version = HAS_VERSION.test(url) ? '' : `${ASSET_VERSION}/`;
+  const resized = url.replace('/image/upload/', `/image/upload/q_auto,w_${width}/${version}`);
   return resized.replace(/\.(jpe?g|png)$/i, '.webp');
 }
 

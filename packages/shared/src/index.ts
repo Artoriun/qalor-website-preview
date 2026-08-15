@@ -31,6 +31,23 @@ export type Project = {
 
 const CLOUDINARY = 'https://res.cloudinary.com/o5hr8kjc/image/upload';
 
+/**
+ * Cache-busting version segment for Cloudinary delivery URLs.
+ *
+ * The bundled URLs carry no version, so the path is identical before and after an image is
+ * replaced: uploading with `invalidate` clears Cloudinary's CDN, but browsers keep serving
+ * the bytes they already hold for the full year these assets are cached for. A version in
+ * the path changes the URL, so a replacement is picked up on the next visit.
+ *
+ * Cloudinary ignores the value when resolving the asset — it only has to differ from last
+ * time. **Bump it whenever an image is replaced.**
+ *
+ * Lives here rather than in the web package because scripts/prerender.mjs builds the hero's
+ * preload URL itself and has to produce a byte-identical string; if the preload and the
+ * <img> disagree, the browser fetches the hero twice.
+ */
+export const ASSET_VERSION = 'v1786803387';
+
 export const PROJECTS: Project[] = [
   {
     id: 1,
