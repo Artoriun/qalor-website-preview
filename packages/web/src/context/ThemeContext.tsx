@@ -30,7 +30,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       const next: Theme = prev === 'dark' ? 'light' : 'dark';
       document.documentElement.dataset.theme = next;
       try {
-        localStorage.setItem('theme', next);
+        // 'theme-v2' is the same key index.html's pre-paint script reads — see its comment
+        // for why it carries a version. Nothing asserts these two strings match, so a typo
+        // here ships a toggle that silently stops persisting and no test goes red.
+        localStorage.setItem('theme-v2', next);
       } catch {
         // Private browsing / storage disabled: the toggle still works for this load,
         // it just won't be remembered next visit.
