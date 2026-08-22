@@ -314,7 +314,9 @@ export type SectionIntro = {
 
 export const DEFAULT_PROJECTS_INTRO: SectionIntro = {
   eyebrow: 'Projectreferenties',
-  heading: 'Onze projecten in 2024-2025',
+  // No year range: it dated itself the moment a project outside it was added, and the
+  // heading is the one place that goes stale without anyone editing anything.
+  heading: 'Onze projecten',
 };
 
 export const DEFAULT_TEAM_INTRO: SectionIntro = {
@@ -433,7 +435,7 @@ export const SERVICE_PAGES: ServicePage[] = [
     blocks: [
       {
         title: 'De gebouwendatabase',
-        body: 'De database wordt opgebouwd uit diverse openbare bronnen, waaronder het BAG-register en Atlas Leefomgeving. Per pand in het projectgebied worden gegevens vastgelegd zoals bouwjaar, gebruiksoppervlak en functie. Dat levert een beeld op van de gebouwvoorraad die aanmerkelijk preciezer is dan een aanname op wijkniveau: twee wijken met evenveel woningen kunnen sterk verschillen in warmtevraag zodra bouwjaar en woningtype uiteenlopen.',
+        body: 'De database wordt opgebouwd uit diverse openbare bronnen, waaronder het BAG-register en Atlas Leefomgeving. Per pand in het projectgebied worden gegevens vastgelegd zoals bouwjaar, gebruiksoppervlak en functie. Dat levert een beeld op van de gebouwvoorraad dat aanmerkelijk preciezer is dan een aanname op wijkniveau: twee wijken met evenveel woningen kunnen sterk verschillen in warmtevraag zodra bouwjaar en woningtype uiteenlopen.',
       },
       {
         title: 'Van gebouw naar warmtevraag',

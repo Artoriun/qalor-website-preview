@@ -162,7 +162,7 @@ voordat vermogens en diameters worden bepaald.
 
 De database wordt opgebouwd uit diverse openbare bronnen, waaronder het BAG-register en Atlas
 Leefomgeving. Per pand in het projectgebied worden gegevens vastgelegd zoals bouwjaar,
-gebruiksoppervlak en functie. Dat levert een beeld op van de gebouwvoorraad die aanmerkelijk
+gebruiksoppervlak en functie. Dat levert een beeld op van de gebouwvoorraad dat aanmerkelijk
 preciezer is dan een aanname op wijkniveau: twee wijken met evenveel woningen kunnen sterk
 verschillen in warmtevraag zodra bouwjaar en woningtype uiteenlopen.
 
