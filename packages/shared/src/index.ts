@@ -127,6 +127,18 @@ export const PROJECTS: Project[] = [
     ],
     image: `${CLOUDINARY}/qalor/projects-assencomp.jpg`,
   },
+  {
+    id: 8,
+    order: 7,
+    name: 'Middelsee Leeuwarden',
+    role: 'Warmtenet Ontwerp',
+    description: [
+      'warmtenet voor 1700 woningen',
+      'nieuwbouw',
+      'in opdracht van gemeente Leeuwarden',
+    ],
+    image: `${CLOUDINARY}/qalor/projects-middelsee.jpg`,
+  },
 ];
 
 export type TeamMember = {
