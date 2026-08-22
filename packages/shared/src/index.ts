@@ -344,7 +344,7 @@ export const DEFAULT_FOOTER: FooterContent = {
   tagline: 'Energiedeskundigen warmtenetten',
   email: 'pdk@qalor.nl',
   phone: '06 112 16 938',
-  address: 'Lange Marktstraat 1, 8911AD, Leeuwarden',
+  address: 'Lange Marktstraat 1, 8911 AD, Leeuwarden',
   addressUrl: 'https://maps.app.goo.gl/svtgb5ivAYVd9MXAA',
   btwNumber: 'NL005077048B43',
   iban: 'NL94 ABNA 0134 0861 39',
