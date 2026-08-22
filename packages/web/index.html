@@ -10,11 +10,20 @@
 
          Light is the standard first-visit theme, not the OS's prefers-color-scheme: a
          first-time visitor always gets light regardless of their system setting: only an
-         explicit toggle (persisted below) switches it to dark. -->
+         explicit toggle (persisted below) switches it to dark.
+
+         The key is versioned ('theme-v2', was 'theme') because "first-time visitor" stopped
+         being true for anyone who had ever tried the toggle: their stored 'dark' outlived
+         the decision to standardise on light, and a value already sitting in someone else's
+         browser cannot be reached any other way. Bumping the suffix resets everyone to light
+         exactly once. The stale 'theme' key is left where it is on purpose — clearing it
+         means shipping a removeItem() that runs on every load forever to reclaim a few
+         bytes. Bump again only for another deliberate reset, and change ThemeContext.tsx's
+         setItem to match: these two strings are one key, and nothing enforces that. -->
     <script>
       (() => {
         try {
-          const stored = localStorage.getItem('theme');
+          const stored = localStorage.getItem('theme-v2');
           document.documentElement.dataset.theme = stored === 'dark' ? 'dark' : 'light';
         } catch (_e) {}
       })();
