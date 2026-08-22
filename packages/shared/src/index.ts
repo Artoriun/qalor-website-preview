@@ -137,7 +137,11 @@ export const PROJECTS: Project[] = [
       'nieuwbouw',
       'in opdracht van gemeente Leeuwarden',
     ],
-    image: `${CLOUDINARY}/qalor/projects-middelsee.jpg`,
+    // Uploaded as WebP at the root rather than qalor/*.jpg like the other seven. Both
+    // differences are inert: optimizeUrl's .jpg -> .webp swap simply finds nothing to
+    // replace, and the folder is organisational, not part of how the URL resolves. Left
+    // unversioned on purpose so ASSET_VERSION applies to it as it does to the rest.
+    image: `${CLOUDINARY}/projects-middelsee.webp`,
   },
 ];
 
