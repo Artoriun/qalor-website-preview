@@ -81,12 +81,19 @@ npm run hash-password    # prints an ADMIN_PASSWORD_HASH
 
 ---
 
-## Replacing an image
+## Adding or replacing an image
 
-Overwrite the public ID in Cloudinary with `invalidate` on, then bump `ASSET_VERSION` in
-`packages/shared/src/index.ts`. The delivery URLs carry that version, and without a change to
-it the path is identical before and after — browsers keep serving what they already hold for
-the full year these assets are cached for.
+The two directions need opposite things from `ASSET_VERSION` in
+`packages/shared/src/index.ts`.
+
+**Adding** one: upload it under a public ID nothing has used, then reference it *without* a
+version — `optimizeUrl` adds `ASSET_VERSION` itself. Leave that constant alone. A path nothing
+has fetched has nothing cached against it, so bumping only re-downloads every other image.
+
+**Replacing** one: overwrite the public ID in Cloudinary with `invalidate` on, then bump
+`ASSET_VERSION`. The delivery URLs carry that version, and without a change to it the path is
+identical before and after — browsers keep serving what they already hold for the full year
+these assets are cached for.
 
 ---
 
