@@ -110,6 +110,13 @@
   transform: translateY(-2px);
 }
 
+/* The arrow is an SVG, not the character "→" (U+2192), because Inter does not contain that
+   codepoint — @fontsource's unicode-range declares U+2191 and U+2193 but skips U+2192. So
+   the glyph was always drawn by whatever system font the browser picked per-character, and
+   that pick differs by platform and is resolved lazily: on Android Chrome it landed at the
+   wrong size and baseline on a cold load and only settled once the fallback was cached,
+   which is why a refresh "fixed" it. Drawing the shape ourselves makes it geometry rather
+   than font fallback, so it is identical on first paint, on every engine. */
 .hero-contact-arrow {
   display: inline-flex;
   align-items: center;
@@ -119,8 +126,13 @@
   border-radius: 50%;
   background-color: #f18825;
   color: #2b1400;
-  font-size: 18px;
-  font-weight: bold;
+  flex: 0 0 auto;
+}
+
+.hero-contact-arrow svg {
+  width: 16px;
+  height: 16px;
+  display: block;
 }
 
 /* Was injected into <head> at runtime from a useEffect. Nothing here needs to be, and a
