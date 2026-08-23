@@ -110,6 +110,8 @@
   transform: translateY(-2px);
 }
 
+/* Just the badge: the arrow inside is components/ArrowRight.tsx, which sizes itself and
+   documents why it is drawn rather than typed. No font-size here — nothing here is text. */
 .hero-contact-arrow {
   display: inline-flex;
   align-items: center;
@@ -119,8 +121,7 @@
   border-radius: 50%;
   background-color: #f18825;
   color: #2b1400;
-  font-size: 18px;
-  font-weight: bold;
+  flex: 0 0 auto;
 }
 
 /* Was injected into <head> at runtime from a useEffect. Nothing here needs to be, and a

@@ -2,6 +2,7 @@ import { useContent } from '../../context/ContentContext';
 import { fullBleedSrcSet, optimizeUrl } from '../../lib/images';
 import Particles from '../Particles/Particles';
 import './Hero.css';
+import ArrowRight from '../ArrowRight';
 
 const smoothScrollTo = (elementId: string) => {
   const element = document.getElementById(elementId);
@@ -53,7 +54,9 @@ const Hero = () => {
               >
                 <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   Contact
-                  <span className="hero-contact-arrow">→</span>
+                  <span className="hero-contact-arrow">
+                    <ArrowRight size={16} />
+                  </span>
                 </span>
               </button>
               <button

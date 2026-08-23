@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import huubImg from '../../assets/images/team/huub.png';
 import janImg from '../../assets/images/team/jan.png';
 import peterImg from '../../assets/images/team/peter.png';
+import ArrowRight from '../ArrowRight';
 import Particles from '../Particles/Particles';
 
 type FormData = {
@@ -391,7 +392,7 @@ const Contact = () => {
                       color: '#E5770F',
                     }}
                   >
-                    →
+                    <ArrowRight size={20} />
                   </span>
                 </span>
               </button>
