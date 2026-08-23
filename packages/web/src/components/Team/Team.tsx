@@ -6,6 +6,7 @@ import { optimizeUrl } from '../../lib/images';
 import { canEmbedPdf, withBase } from '../../lib/pdf';
 import { Carousel } from '../Carousel/Carousel';
 import './Team.css';
+import ArrowRight from '../ArrowRight';
 
 // Only loaded once someone actually opens a CV. Far less critical than it was when this
 // pulled in a PDF library (see TeamPdfModal.tsx), but the modal is still only needed on
@@ -62,8 +63,8 @@ const TeamCard = ({ member, onOpenCv }: { member: Slide; onOpenCv: (m: Slide) =>
               }}
             >
               CV
-              <span className="team-cv-arrow" aria-hidden="true">
-                →
+              <span className="team-cv-arrow">
+                <ArrowRight size={11} />
               </span>
             </a>
           )}

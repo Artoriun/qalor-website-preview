@@ -1,6 +1,7 @@
 import { type CSSProperties, useEffect, useRef, useState } from 'react';
 import qalorLogo from '../../assets/images/figures/qalor logo.png';
 import './Navbar.css';
+import ArrowRight from '../ArrowRight';
 import ThemeToggle from './ThemeToggle';
 
 const navbarStyle: CSSProperties = {
@@ -247,7 +248,7 @@ const Navbar = () => {
                   pointerEvents: 'none', // Prevent hover effects on arrow
                 }}
               >
-                →
+                <ArrowRight size={13} />
               </span>
             </span>
           </button>

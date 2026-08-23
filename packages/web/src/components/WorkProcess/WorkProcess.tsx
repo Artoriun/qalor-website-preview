@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useContent } from '../../context/ContentContext';
 import { dprSrcSet, optimizeUrl, STEP_W } from '../../lib/images';
 import './WorkProcess.css';
+import ArrowRight from '../ArrowRight';
 
 // Every step shares one look (see the note in the STEPS array this replaced) — not part of
 // the admin-editable WorkProcessStep shape, since it's presentation, not content.
@@ -249,7 +250,7 @@ const WorkProcess = () => {
                   style={learnMoreButtonStyle(false)}
                 >
                   Meer leren
-                  <span style={{ fontSize: '1rem' }}>→</span>
+                  <ArrowRight size={16} />
                 </button>
               </div>
             );
@@ -342,7 +343,7 @@ const WorkProcess = () => {
                         style={learnMoreButtonStyle(true)}
                       >
                         Meer leren
-                        <span style={{ fontSize: '1rem' }}>→</span>
+                        <ArrowRight size={16} />
                       </button>
                     </div>
                   </>
