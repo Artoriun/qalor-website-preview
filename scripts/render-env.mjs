@@ -1,7 +1,15 @@
 /**
  * Sets every environment variable the deployed API needs, in one call, and redeploys.
  *
- *   node scripts/render-env.mjs --service qalor-api --firebase ~/Downloads/sa.json
+ *   npm run render:env -- --service qalor-api --firebase ~/Downloads/sa.json
+ *
+ * Run it through that script rather than `node` directly: it passes
+ * --disable-warning=MODULE_TYPELESS_PACKAGE_JSON, because importing password.ts makes Node
+ * complain that packages/api/package.json declares no "type" and suggests adding
+ * "type": "module". Do not do that. That tsconfig sets "module": "commonjs", so the flag
+ * would make `node dist/index.js` parse CommonJS output as ESM and the deployed API would
+ * stop booting. The warning is noise here and the suggestion is actively wrong, so it is
+ * silenced by name rather than by --no-warnings, which would hide real ones too.
  *
  * The alternative is eight rows typed into a web form, where the only one that is hard to
  * get right is also the one that fails most opaquely: FIREBASE_PRIVATE_KEY has to arrive
