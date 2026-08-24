@@ -54,8 +54,11 @@ export const PROJECTS: Project[] = [
     order: 0,
     name: 'Heechterp Leeuwarden',
     role: 'Warmtenet Ontwerp',
-    description:
-      'warmtenet voor 868 woningen\nzowel bestaande bouw als nieuwbouw\nindopdrachtgever woningcorporatie Elkien',
+    description: [
+      'warmtenet voor 868 woningen',
+      'zowel bestaande bouw als nieuwbouw',
+      'in opdracht van woningcorporatie Elkien',
+    ],
     image: `${CLOUDINARY}/qalor/projects-heechterp.jpg`,
   },
   {
@@ -63,8 +66,11 @@ export const PROJECTS: Project[] = [
     order: 1,
     name: 'Dokkum Fûgellân',
     role: 'Energie Optimalisatie',
-    description:
-      'warmtenet voor 1114 woningen + utiliteit\nbestaande bouw\nin opdracht van gemeente Noardeast-Fryslân',
+    description: [
+      'warmtenet voor 1114 woningen + utiliteit',
+      'bestaande bouw',
+      'in opdracht van gemeente Noardeast-Fryslân',
+    ],
     image: `${CLOUDINARY}/qalor/projects-dokkum.jpg`,
   },
   {
@@ -87,7 +93,7 @@ export const PROJECTS: Project[] = [
     description: [
       'warmte- en koudenet voor 604 woningen',
       'bestaande bouw',
-      'in opdracht van gemeente Súdwest-Fryslán',
+      'in opdracht van gemeente Súdwest-Fryslân',
     ],
     image: `${CLOUDINARY}/qalor/projects-sneek.jpg`,
   },
@@ -99,7 +105,7 @@ export const PROJECTS: Project[] = [
     description: [
       'warmtenet voor 819 woningen',
       'bestaande bouw',
-      'in opdracht van gemeente Súdwest-Fryslán',
+      'in opdracht van gemeente Súdwest-Fryslân',
     ],
     image: `${CLOUDINARY}/qalor/projects-heeg.jpg`,
   },
@@ -245,7 +251,7 @@ export const DEFAULT_ABOUT: AboutContent = {
     {
       id: 'wat-is-qalor',
       title: 'Wat is Qalor?',
-      body: 'Een samenwerking van drie recent gepensioneerde warmte-experts\n\nMet meer dan 130 jaar ervaring in de energie wereld waarvan meer dan 100 jaar bij warmtebedrijven.',
+      body: 'Een samenwerking van drie recent gepensioneerde warmte-experts\n\nMet meer dan 130 jaar ervaring in de energiewereld waarvan meer dan 100 jaar bij warmtebedrijven.',
     },
     {
       id: 'werkzaamheden',
@@ -305,7 +311,7 @@ export const WORK_PROCESS_STEPS: WorkProcessStep[] = [
     order: 2,
     number: '03',
     title: 'Het maken van de exploitatieberekening',
-    body: "Op basis van de AutoCAD tekening, de woningendatabase en de bepaling van het concept en de investeringen van de energie-opwekinstallatie wordt een uitgebreid financieel model in Excel gevuld, waarbij op basis van verschillende uitgangspunten diverse scenario's worden gemaakt.",
+    body: "Op basis van de AutoCAD-tekening, de gebouwendatabase en de bepaling van het concept en de investeringen van de energieopwekinstallatie wordt een uitgebreid financieel model in Excel gevuld, waarbij op basis van verschillende uitgangspunten diverse scenario's worden gemaakt.",
     image: `${CLOUDINARY}/qalor/workprocess-berekening.jpg`,
     alt: 'Exploitatieberekening',
   },
@@ -326,7 +332,7 @@ export const DEFAULT_PROJECTS_INTRO: SectionIntro = {
 export const DEFAULT_TEAM_INTRO: SectionIntro = {
   eyebrow: 'Ons team',
   heading:
-    'Een gezamenlijke werkervaring van meer dan 130 jaar in de warmte wereld waarvan meer dan 100 jaar bij warmtebedrijven heeft geleid tot een unieke krachtenbundeling.',
+    'Een gezamenlijke werkervaring van meer dan 130 jaar in de warmtewereld waarvan meer dan 100 jaar bij warmtebedrijven heeft geleid tot een unieke krachtenbundeling.',
 };
 
 export type FooterContent = {
@@ -348,7 +354,7 @@ export const DEFAULT_FOOTER: FooterContent = {
   addressUrl: 'https://maps.app.goo.gl/svtgb5ivAYVd9MXAA',
   btwNumber: 'NL005077048B43',
   iban: 'NL94 ABNA 0134 0861 39',
-  copyright: 'Copyright @ 2026 Qalor',
+  copyright: '© Qalor',
 };
 
 /**
