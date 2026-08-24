@@ -27,17 +27,32 @@ export type Store = Pick<Firestore, 'collection'>;
 
 export const isFirestoreConfigured = configured;
 
+/**
+ * Which Firestore database inside the project, for the case where it is not the default one.
+ *
+ * A Google Cloud project can hold several Firestore databases, each with an id, and the one
+ * created through the console is only called `(default)` if you accept that name. The Admin
+ * SDK always talks to `(default)` unless handed another id — so a database created as, say,
+ * `qalor` is simply invisible, and the failure is indirect: credentials verify, the app
+ * boots, and reads fail with `firestore: unreachable` while /api/content quietly serves the
+ * bundled fallback. It looks like a permissions or key problem and is neither.
+ *
+ * Unset means `(default)`, which is what an existing deployment already relies on.
+ */
+const databaseId = process.env.FIREBASE_DATABASE_ID?.trim();
+
 const real: Store = configured
-  ? getFirestore(
-      initializeApp({
+  ? (() => {
+      const app = initializeApp({
         credential: cert({
           projectId: process.env.FIREBASE_PROJECT_ID,
           clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
           privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
         }),
         storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
-      }),
-    )
+      });
+      return databaseId ? getFirestore(app, databaseId) : getFirestore(app);
+    })()
   : (createMemoryStore() as unknown as Store);
 
 let override: Store | null = null;
