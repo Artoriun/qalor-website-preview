@@ -1,10 +1,12 @@
 # Qalor Website
 
+[![CI](https://github.com/Artoriun/qalor-website-preview/actions/workflows/ci.yml/badge.svg)](https://github.com/Artoriun/qalor-website-preview/actions/workflows/ci.yml)
+
 The marketing site for Qalor — energy experts specialising in heating networks and sustainable
 energy solutions. Prerendered to static HTML so the first response is real content, with every
 section editable from an admin portal.
 
-**Live preview:** https://artoriun.github.io/qalor-website-preview/
+**Live:** https://qalor.nl · **Preview:** https://artoriun.github.io/qalor-website-preview/
 
 <img width="1440" alt="Qalor homepage in light mode" src=".github/readme-assets/homepage.png" />
 
