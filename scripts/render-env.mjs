@@ -26,8 +26,6 @@
 
 import { randomBytes } from 'node:crypto';
 import { readFileSync } from 'node:fs';
-import { stdin, stdout } from 'node:process';
-import { createInterface } from 'node:readline/promises';
 // The API's own hasher, not a reimplementation and not the CLI's stdout: the format is
 // `scrypt$salt$key` and packages/api verifies against exactly this function, so importing it
 // is the only version that cannot drift. (scripts/hash-password.mjs prints the same value
@@ -44,39 +42,38 @@ const args = Object.fromEntries(
 );
 
 const serviceName = args.service ?? 'qalor-api';
-if (!args.firebase) {
-  console.error('usage: node scripts/render-env.mjs --service <name> --firebase <sa.json>');
+if (!args.firebase || !args.values) {
+  console.error(
+    'usage: npm run render:env -- --firebase <service-account.json> --values <values.env>' +
+      '\n       [--service <name>]  (default: qalor-api)',
+  );
   process.exit(1);
 }
 
-const rl = createInterface({ input: stdin, output: stdout, terminal: true });
-const ask = async (q) => (await rl.question(q)).trim();
-
 /**
- * Reads without echoing, so a pasted secret does not stay on screen.
+ * Values come from a file, not prompts.
  *
- * Deliberately the same shape as scripts/hash-password.mjs: one readline interface, and a
- * temporary 'data' listener that prints an asterisk per keystroke while readline collects
- * the real characters. The obvious alternative — `for await (const chunk of stdin)` — works
- * exactly once. Consuming stdin as an async iterator destroys the stream when the loop
- * exits, so the second prompt dies with `AbortError: The operation was aborted`, and the
- * readline interface still attached to that stdin re-throws it as an unhandled 'error'
- * event. It reads like a Node bug and is not one.
+ * Prompting was the obvious design and it does not survive contact with reality: readline
+ * with terminal:true behaves differently under npm, under different terminal emulators, and
+ * — worst — leaves the shell in raw mode if the process dies mid-prompt, after which the
+ * next run appears to hang with no output at all. A file has none of those failure modes,
+ * is re-runnable without retyping four secrets, and can be inspected before it is used.
+ *
+ * Format is KEY=value, one per line, # for comments. Values are taken verbatim after the
+ * first '=' so a Cloudinary URL or a base64 secret containing '=' survives intact.
  */
-const askSecret = (q) =>
-  new Promise((resolve) => {
-    stdout.write(q);
-    const onData = (ch) => {
-      if (['\n', '\r', '\u0004'].includes(ch.toString())) stdin.removeListener('data', onData);
-      else stdout.write('*');
-    };
-    stdin.on('data', onData);
-    rl.question('').then((answer) => {
-      stdin.removeListener('data', onData);
-      stdout.write('\n');
-      resolve(answer.trim());
-    });
-  });
+function readValues(file) {
+  const text = readFileSync(file.replace(/^~/, process.env.HOME), 'utf8');
+  const out = {};
+  for (const line of text.split('\n')) {
+    const t = line.trim();
+    if (!t || t.startsWith('#')) continue;
+    const i = t.indexOf('=');
+    if (i === -1) continue;
+    out[t.slice(0, i).trim()] = t.slice(i + 1).trim();
+  }
+  return out;
+}
 
 // ---- gather -------------------------------------------------------------------------------
 
@@ -89,11 +86,17 @@ for (const k of ['project_id', 'client_email', 'private_key']) {
 const privateKey = JSON.stringify(sa.private_key).slice(1, -1);
 if (privateKey.includes('\n')) throw new Error('private key still contains real newlines');
 
-const renderKey = await askSecret('Render API key (Account Settings -> API Keys): ');
-const adminPassword = await askSecret('Admin portal password to set: ');
-const cloudinaryUrl = await askSecret('CLOUDINARY_URL (cloudinary://key:secret@o5hr8kjc): ');
-const corsOrigin = (await ask('CORS_ORIGIN [https://qalor.nl]: ')).trim() || 'https://qalor.nl';
-rl.close();
+const vals = readValues(args.values);
+const need = ['RENDER_API_KEY', 'ADMIN_PASSWORD', 'CLOUDINARY_URL'];
+const absent = need.filter((k) => !vals[k]);
+if (absent.length) {
+  console.error(`${args.values} is missing: ${absent.join(', ')}`);
+  process.exit(1);
+}
+const renderKey = vals.RENDER_API_KEY;
+const adminPassword = vals.ADMIN_PASSWORD;
+const cloudinaryUrl = vals.CLOUDINARY_URL;
+const corsOrigin = vals.CORS_ORIGIN || 'https://qalor.nl';
 
 const envVars = [
   { key: 'NODE_VERSION', value: '22' },
