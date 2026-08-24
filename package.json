@@ -25,7 +25,8 @@
     "check:budgets": "node scripts/check-budgets.mjs",
     "check:lighthouse": "node scripts/check-lighthouse.mjs",
     "hash-password": "node scripts/hash-password.mjs",
-    "ci": "node scripts/ci-local.mjs"
+    "ci": "node scripts/ci-local.mjs",
+    "render:env": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/render-env.mjs"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.12.1",
