@@ -15,6 +15,7 @@
  * ROUTES and sitemap.xml from, so a page added there is submitted without a second edit.
  */
 
+import { readFileSync } from 'node:fs';
 import { SERVICE_PAGES } from '@qalor/shared';
 
 const SITE = (process.env.SITE_URL ?? 'https://qalor.nl').replace(/\/$/, '');
@@ -24,6 +25,31 @@ if (!KEY) {
   // A missing key is a configuration gap, not a failure: the deploy already happened, and
   // this step is explicitly continue-on-error. Say so plainly rather than throwing.
   console.log('INDEXNOW_KEY is unset — skipping. Set it as an Actions variable to enable.');
+  process.exit(0);
+}
+
+/**
+ * Refuse to submit a build that asks not to be indexed.
+ *
+ * The preview deployment is built with NOINDEX=1 and every page carries a robots noindex
+ * tag; asking a crawler to come and look at it is the exact opposite of what that build is
+ * for. Nothing else stops this — the step lives in a deploy job, and a copy of this
+ * repository that publishes a preview would inherit it silently.
+ *
+ * Read from the built artifact rather than from the NOINDEX variable, because the artifact
+ * is what was actually uploaded. A build whose env said one thing and whose output says
+ * another should be believed on its output.
+ */
+const built = new URL('../packages/web/dist/index.html', import.meta.url).pathname;
+let shell = '';
+try {
+  shell = readFileSync(built, 'utf8');
+} catch {
+  console.log(`no build at ${built} — skipping (nothing was published from here)`);
+  process.exit(0);
+}
+if (/<meta[^>]+name=["']robots["'][^>]*noindex/i.test(shell)) {
+  console.log('this build is noindexed — not submitting it to IndexNow');
   process.exit(0);
 }
 
