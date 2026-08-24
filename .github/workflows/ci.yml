@@ -256,3 +256,13 @@ jobs:
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./packages/web/dist/
           server-dir: ${{ vars.FTP_SERVER_DIR || '/' }}
+          # Explicit TLS on the normal port — what `curl --ssl-reqd ftp://…` negotiates —
+          # rather than the action's plain-ftp default. This host accepts the unencrypted
+          # control connection and only then resets the data socket, so the failure arrives
+          # as ECONNRESET partway in rather than as a refused login: the whole upload plan
+          # prints, then it dies opening the first data transfer. ftps-legacy is the other
+          # spelling and means implicit TLS on port 990, which is not what this server does.
+          protocol: ftps
+          # 30s by default. The first deploy moves ~2.4MB as many small font and PDF files,
+          # and a shared host is slow to open a data connection per file.
+          timeout: 120000
