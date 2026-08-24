@@ -57,8 +57,14 @@ async function askSecret(q) {
     // do not survive being copied between files, where they degrade to a comparison
     // against '' that no chunk ever matches — losing Ctrl-C and backspace in the one
     // prompt where a mistyped secret cannot be seen in order to be corrected.
-    if (s === '\u0003') { stdout.write('\n'); process.exit(130); }
-    if (s === '\u007f' || s === '\b') { out = out.slice(0, -1); continue; }
+    if (s === '\u0003') {
+      stdout.write('\n');
+      process.exit(130);
+    }
+    if (s === '\u007f' || s === '\b') {
+      out = out.slice(0, -1);
+      continue;
+    }
     out += s;
   }
   stdin.setRawMode?.(wasRaw ?? false);
@@ -106,7 +112,8 @@ const call = async (path, init = {}) => {
       ...init.headers,
     },
   });
-  if (!res.ok) throw new Error(`${init.method ?? 'GET'} ${path} -> ${res.status} ${await res.text()}`);
+  if (!res.ok)
+    throw new Error(`${init.method ?? 'GET'} ${path} -> ${res.status} ${await res.text()}`);
   return res.json();
 };
 
