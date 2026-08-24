@@ -266,3 +266,23 @@ jobs:
           # 30s by default. The first deploy moves ~2.4MB as many small font and PDF files,
           # and a shared host is slow to open a data connection per file.
           timeout: 120000
+
+      # Tells Bing, Yandex, Seznam, Naver and Yep that these URLs changed, instead of
+      # waiting for them to come back on their own schedule. They act on it within minutes.
+      #
+      # Google is deliberately not in that list: it does not consume IndexNow. It trialled
+      # the protocol in 2021 and never adopted it, and the old sitemap ping endpoint was
+      # retired in 2023, so the only fast path at Google is Search Console's URL Inspection,
+      # which is manual and per-URL. Nothing in CI can stand in for it.
+      #
+      # Ownership is proved by a key file at the site root, which is why the URL list is
+      # sent only after the FTP step: the key has to be fetchable before the ping is
+      # believed. Reads the same URLs the sitemap was built from so the two cannot drift.
+      - name: Tell IndexNow the site changed
+        # Never fails the deploy — the files are already published by this point, and a
+        # search engine being slow to accept a hint is not a broken release.
+        continue-on-error: true
+        run: node scripts/ping-indexnow.mjs
+        env:
+          SITE_URL: https://qalor.nl
+          INDEXNOW_KEY: ${{ vars.INDEXNOW_KEY }}
