@@ -5,3 +5,35 @@
 # inert (and harmless) on anything else, same as GitHub Pages' equivalent, native
 # handling of a root-level 404.html.
 ErrorDocument 404 /404.html
+
+# Caching. The host sends only ETag and Last-Modified, so every asset costs a conditional
+# request on each navigation even when nothing changed — Lighthouse scored the live domain
+# 82 on mobile with "serve static assets with an efficient cache policy" among the causes.
+#
+# The split matters more than the numbers. Everything Vite emits under /assets/ carries a
+# content hash in its filename, so a changed file is a changed URL and the old one is never
+# requested again: those can be cached for a year and never revalidated. HTML cannot be,
+# because its URL is stable across deploys — cache index.html and a visitor keeps the old
+# site until it expires, including the <script src> pointing at assets that no longer exist.
+# no-cache does not mean "don't store", it means "revalidate before use", so the ETag still
+# saves the transfer on an unchanged page while a deploy is picked up immediately.
+#
+# Guarded so this stays inert rather than 500ing if a host lacks either module.
+<IfModule mod_headers.c>
+  <FilesMatch "\.(?:js|css|woff2?|ttf|otf|eot|svg|png|jpe?g|gif|webp|avif|ico)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+
+  # Stable URLs whose contents can change under them: the entry documents, the crawler
+  # files, and the CVs, which are replaced in place rather than content-hashed.
+  <FilesMatch "\.(?:html|xml|txt|pdf)$">
+    Header set Cache-Control "no-cache"
+  </FilesMatch>
+</IfModule>
+
+<IfModule mod_deflate.c>
+  # Already on for HTML and JS here; naming the rest so a host default that misses one of
+  # these — SVG and JSON are the usual omissions — does not quietly ship them uncompressed.
+  AddOutputFilterByType DEFLATE text/html text/css text/plain text/xml application/xml
+  AddOutputFilterByType DEFLATE application/javascript application/json image/svg+xml
+</IfModule>
