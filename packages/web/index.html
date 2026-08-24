@@ -32,6 +32,18 @@
          candidate) — this starts the cross-origin DNS/TLS handshake immediately instead
          of after React has rendered the <img> tag that would otherwise trigger it. -->
     <link rel="preconnect" href="https://res.cloudinary.com" crossorigin />
+    <!-- Proves ownership of qalor.nl to Google Search Console, which is the only way to
+         reach URL Inspection and ask for a recrawl — Google consumes neither IndexNow (see
+         scripts/ping-indexnow.mjs) nor a sitemap ping, so this tag is the entry point to the
+         one fast path it does offer. It lives here rather than in a verification file
+         because scripts/prerender.mjs writes every route from this shell, so one line covers
+         all five pages and survives future deploys. Not a secret: it is served to everyone
+         who loads the page, and only states that whoever set it can edit this site.
+         Removing it un-verifies the property. -->
+    <meta
+      name="google-site-verification"
+      content="HcrSuwETYsLjiyXW0w8eibTz1wasB3e3z7xORHR8pl8"
+    />
     <link rel="icon" type="image/png" href="/qalor Q.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
