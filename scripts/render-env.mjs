@@ -97,6 +97,7 @@ const renderKey = vals.RENDER_API_KEY;
 const adminPassword = vals.ADMIN_PASSWORD;
 const cloudinaryUrl = vals.CLOUDINARY_URL;
 const corsOrigin = vals.CORS_ORIGIN || 'https://qalor.nl';
+const dbId = vals.FIREBASE_DATABASE_ID || '';
 
 const envVars = [
   { key: 'NODE_VERSION', value: '22' },
@@ -107,6 +108,11 @@ const envVars = [
   { key: 'FIREBASE_CLIENT_EMAIL', value: sa.client_email },
   { key: 'FIREBASE_PRIVATE_KEY', value: privateKey },
   { key: 'CLOUDINARY_URL', value: cloudinaryUrl },
+  // Only sent when the values file names one. A project can hold several Firestore
+  // databases and the Admin SDK reaches (default) unless given an id, so omitting this is
+  // correct for a default database and required for any other — sending an empty string
+  // would not be, hence the filter rather than a blank entry.
+  ...(dbId ? [{ key: 'FIREBASE_DATABASE_ID', value: dbId }] : []),
 ];
 
 // ---- apply --------------------------------------------------------------------------------
