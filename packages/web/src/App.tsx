@@ -3,8 +3,6 @@ import AOS from 'aos';
 import 'aos/dist/aos.css';
 import { lazy, Suspense, useEffect } from 'react';
 import About from './components/About/About';
-// Contact isn't wired in — see the commented-out <Contact /> below.
-// import Contact from './components/Contact/Contact';
 import Footer from './components/Footer/Footer';
 import Hero from './components/Hero/Hero';
 import Navbar from './components/Navbar/Navbar';
@@ -118,7 +116,6 @@ function MarketingSite() {
         <About />
         <WorkProcess />
         <Projects />
-        {/* <Contact /> */}
       </main>
       <Footer />
     </div>
