@@ -175,7 +175,14 @@ jobs:
     name: Deploy via FTP
     needs: [verify, e2e]
     # Never from a pull request — a PR build must not publish to production.
-    if: github.ref == 'refs/heads/master' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule')
+    # Production only. The branch alone used to carry this, which worked by accident:
+    # the preview repository's default branch is `main`, so its copy of this job never
+    # matched. Naming the repository makes that intent rather than luck.
+    if: |
+      github.repository == 'Artoriun/qalor' &&
+      github.ref == 'refs/heads/master' &&
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch' ||
+       github.event_name == 'schedule')
     runs-on: ubuntu-latest
     concurrency:
       group: deploy
@@ -296,3 +303,110 @@ jobs:
         env:
           SITE_URL: https://qalor.nl
           INDEXNOW_KEY: ${{ vars.INDEXNOW_KEY }}
+
+  # ---------------------------------------------------------------------------------------
+  # The preview deployment. Same workflow file as production on purpose: the two repositories
+  # held separate copies that drifted eleven commits apart, and every fix had to be applied
+  # twice or forgotten once. One file, gated per repository, cannot drift from itself.
+  #
+  # Until this existed the preview site was published by hand — pushing a built dist to a
+  # gh-pages branch — which meant a green run on `main` proved the checks passed and nothing
+  # else, and the live preview could sit days behind the branch it supposedly previewed.
+  pages:
+    name: Deploy to GitHub Pages
+    needs: [verify, e2e]
+    if: |
+      github.repository == 'Artoriun/qalor-website-preview' &&
+      github.ref == 'refs/heads/main' &&
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch' ||
+       github.event_name == 'schedule')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - run: npm ci
+
+      # Deliberately no VITE_API_URL. The preview renders from the bundled defaults in
+      # packages/shared, so it is a snapshot of what the repository contains rather than of
+      # whatever the portal holds — which is what makes it useful for reviewing a change.
+      # Its /admin reports that no server is configured, which is accurate.
+      #
+      # VITE_BASE because Pages serves this from a project subpath, and NOINDEX because two
+      # copies of the same Dutch copy competing in search results would cost the real site.
+      - name: Build
+        run: npm run build
+        env:
+          VITE_BASE: /qalor-website-preview/
+          NOINDEX: '1'
+
+      # Needs a browser: the prerenderer boots the built app and writes each route's DOM to
+      # its own index.html, so Pages serves real markup at a 200 rather than falling back to
+      # 404.html. Cached on the resolved version — the browser binaries alone are ~300MB.
+      - name: Get Playwright version
+        id: playwright-version
+        run: echo "version=$(node -p "require('./package-lock.json').packages['node_modules/@playwright/test'].version")" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v5
+        id: playwright-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright-version.outputs.version }}
+
+      - name: Install Chromium
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: |
+          for attempt in 1 2 3; do
+            npx playwright install --with-deps chromium && exit 0
+            [ "$attempt" = 3 ] || echo "apt attempt $attempt failed; retrying"
+            sleep $((attempt * 15))
+          done
+          echo "::error::npx playwright install --with-deps chromium failed three times"
+          exit 1
+
+      - name: Install Chromium's OS dependencies
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: |
+          for attempt in 1 2 3; do
+            npx playwright install-deps chromium && exit 0
+            [ "$attempt" = 3 ] || echo "apt attempt $attempt failed; retrying"
+            sleep $((attempt * 15))
+          done
+          echo "::error::npx playwright install-deps chromium failed three times"
+          exit 1
+
+      # SITE_URL stays qalor.nl even here: canonicals must credit the real domain, so an
+      # indexed preview page points at production rather than competing with it.
+      - name: Prerender, sitemap and robots
+        run: npm run prerender
+        env:
+          SITE_URL: https://qalor.nl
+          VITE_BASE: /qalor-website-preview/
+          NOINDEX: '1'
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v6
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: 'packages/web/dist'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5
