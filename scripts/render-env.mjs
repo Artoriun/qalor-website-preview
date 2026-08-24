@@ -49,36 +49,34 @@ if (!args.firebase) {
   process.exit(1);
 }
 
-const rl = createInterface({ input: stdin, output: stdout });
-const ask = (q) => rl.question(q);
+const rl = createInterface({ input: stdin, output: stdout, terminal: true });
+const ask = async (q) => (await rl.question(q)).trim();
 
-/** Reads without echoing, so a pasted secret does not stay on screen. */
-async function askSecret(q) {
-  stdout.write(q);
-  const wasRaw = stdin.isRaw;
-  stdin.setRawMode?.(true);
-  let out = '';
-  for await (const chunk of stdin) {
-    const s = chunk.toString();
-    if (s === '\r' || s === '\n') break;
-    // Escapes, not literal control characters: the literals are invisible in a diff and
-    // do not survive being copied between files, where they degrade to a comparison
-    // against '' that no chunk ever matches — losing Ctrl-C and backspace in the one
-    // prompt where a mistyped secret cannot be seen in order to be corrected.
-    if (s === '\u0003') {
+/**
+ * Reads without echoing, so a pasted secret does not stay on screen.
+ *
+ * Deliberately the same shape as scripts/hash-password.mjs: one readline interface, and a
+ * temporary 'data' listener that prints an asterisk per keystroke while readline collects
+ * the real characters. The obvious alternative — `for await (const chunk of stdin)` — works
+ * exactly once. Consuming stdin as an async iterator destroys the stream when the loop
+ * exits, so the second prompt dies with `AbortError: The operation was aborted`, and the
+ * readline interface still attached to that stdin re-throws it as an unhandled 'error'
+ * event. It reads like a Node bug and is not one.
+ */
+const askSecret = (q) =>
+  new Promise((resolve) => {
+    stdout.write(q);
+    const onData = (ch) => {
+      if (['\n', '\r', '\u0004'].includes(ch.toString())) stdin.removeListener('data', onData);
+      else stdout.write('*');
+    };
+    stdin.on('data', onData);
+    rl.question('').then((answer) => {
+      stdin.removeListener('data', onData);
       stdout.write('\n');
-      process.exit(130);
-    }
-    if (s === '\u007f' || s === '\b') {
-      out = out.slice(0, -1);
-      continue;
-    }
-    out += s;
-  }
-  stdin.setRawMode?.(wasRaw ?? false);
-  stdout.write('\n');
-  return out.trim();
-}
+      resolve(answer.trim());
+    });
+  });
 
 // ---- gather -------------------------------------------------------------------------------
 
