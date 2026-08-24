@@ -30,5 +30,8 @@ services:
         sync: false
       - key: FIREBASE_PRIVATE_KEY
         sync: false
+      # Only needed when the Firestore database is not `(default)`.
+      - key: FIREBASE_DATABASE_ID
+        sync: false
       - key: CLOUDINARY_URL
         sync: false
