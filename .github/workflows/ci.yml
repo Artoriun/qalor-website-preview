@@ -266,10 +266,3 @@ jobs:
           # 30s by default. The first deploy moves ~2.4MB as many small font and PDF files,
           # and a shared host is slow to open a data connection per file.
           timeout: 120000
-          # Temporary, to read the PASV reply. The control connection and login both
-          # succeed and only the data socket resets, which is the signature of a passive
-          # port range the runner cannot reach — either firewalled to known IPs or answered
-          # with an address that is not routable from outside the host. The verbose log
-          # prints the server's PASV response, which tells those two apart. It does not
-          # print credentials. Remove once the cause is known.
-          log-level: verbose
