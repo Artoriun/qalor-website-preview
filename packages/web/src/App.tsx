@@ -41,8 +41,7 @@ const servicePage =
 // library, since removed in favour of the browser's own (see TeamPdfModal.tsx) — and what
 // little is left is lazy-loaded inside Team itself. Team's own code is as cheap as
 // About/WorkProcess/Projects/Footer, and being eager here avoids the same
-// Suspense-fallback CLS those already had fixed for them (the "Laden..." placeholder is a
-// very different height from the real section that replaces it).
+// Suspense-fallback CLS those already had fixed for them.
 
 function MarketingSite() {
   useEffect(() => {

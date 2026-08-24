@@ -1,5 +1,0 @@
-# pdf.js ships a prebuilt worker bundle we serve as a static asset — it's a vendored
-# dependency, not code written for this project. Left unmarked, its 1.5MB of minified JS
-# swamps GitHub's language-detection stats and makes the repo look almost entirely JS
-# instead of TypeScript.
-packages/web/public/pdfjs/* linguist-vendored

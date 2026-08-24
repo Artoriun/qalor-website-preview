@@ -81,6 +81,3 @@ export function dprSrcSet(url: string, w: number): string {
  * previous fixed 600 was under that even at 1x, and less than half what a 2x screen needs.
  */
 export const ABOUT_W = 700;
-
-/** Width of a carousel card (Projects, Team). */
-export const CARD_W = 350;
