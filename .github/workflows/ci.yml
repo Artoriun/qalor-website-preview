@@ -230,13 +230,23 @@ jobs:
           echo "::error::npx playwright install-deps chromium failed three times"
           exit 1
 
-      - name: Build
-        run: npm run build
-
       # VITE_API_URL is a repo secret (Settings -> Secrets and variables -> Actions ->
       # Secrets) pointing at the deployed packages/api instance (see ADMIN.md) — unset
-      # until that's provisioned, in which case this falls back to the bundled defaults in
-      # packages/shared with a warning, same as running it locally with no API configured.
+      # until that's provisioned, in which case both steps below fall back to the bundled
+      # defaults in packages/shared, same as running locally with no API configured.
+      #
+      # It has to be on BOTH steps, for two different reasons, and having it on only the
+      # second is a state that looks like it works: Vite inlines import.meta.env.VITE_API_URL
+      # at compile time, so without it here the shipped bundle has no API address and
+      # /admin reports "de server is niet bereikbaar" — while prerender, which reads the
+      # variable at runtime to fetch content, still produces pages full of live data. The
+      # public site is then correct and the portal is dead, with nothing in the build log
+      # to say so.
+      - name: Build
+        run: npm run build
+        env:
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
+
       - name: Prerender, sitemap and robots
         run: npm run prerender
         env:
