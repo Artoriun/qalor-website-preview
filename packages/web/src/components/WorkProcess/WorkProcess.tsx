@@ -62,7 +62,13 @@ const WorkProcess = () => {
   const { content } = useContent();
   const { eyebrow, heading } = content.workProcessIntro;
   const steps = content.workProcessSteps;
-  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+  // All three start on the desktop branch — what the prerenderer captured — and are corrected
+  // in the effect below. isMobile used to be derived from a windowWidth state seeded with
+  // `window.innerWidth`, which reads the real viewport during the very first render: on a
+  // phone that produced a different tree than the markup being hydrated, so React discarded
+  // the entire prerendered page and re-rendered from scratch. The two flags beside it already
+  // defaulted this way, which is why this was the only one that broke.
+  const [isMobile, setIsMobile] = useState(false);
   const [isTablet, setIsTablet] = useState(false);
   const [isLandscape, setIsLandscape] = useState(false);
 
@@ -70,7 +76,7 @@ const WorkProcess = () => {
     const handleResize = () => {
       const width = window.innerWidth;
       const height = window.innerHeight;
-      setWindowWidth(width);
+      setIsMobile(width <= 768);
       setIsTablet(width >= 769 && width <= 1024);
       setIsLandscape(width > height && width / height > 1.2); // Landscape if significantly wider than tall
     };
@@ -81,7 +87,6 @@ const WorkProcess = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const isMobile = windowWidth <= 768;
   const useMobileLayout = isMobile || isTablet;
 
   const smoothScrollTo = (elementId: string) => {
@@ -129,7 +134,7 @@ const WorkProcess = () => {
                 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", sans-serif',
             }}
           >
-            • {eyebrow}
+            {`• ${eyebrow}`}
           </div>
           <h2
             style={{

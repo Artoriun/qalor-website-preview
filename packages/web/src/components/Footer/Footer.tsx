@@ -182,11 +182,18 @@ const Footer = () => {
                   {address}
                 </a>
               </p>
+              {/* The leading space lives inside the interpolation rather than beside it.
+                  `</strong> {btwNumber}` renders two adjacent text nodes, and prerendering
+                  serialises the DOM, where adjacent text merges into one — so React looks
+                  for a text node the markup no longer has and abandons hydration for the
+                  whole page. */}
               <p>
-                <strong>Btw-nummer:</strong> {btwNumber}
+                <strong>Btw-nummer:</strong>
+                {` ${btwNumber}`}
               </p>
               <p>
-                <strong>IBAN:</strong> {iban}
+                <strong>IBAN:</strong>
+                {` ${iban}`}
               </p>
             </div>
           </div>

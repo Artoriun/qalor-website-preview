@@ -190,7 +190,31 @@ async function capture(path) {
   // network event.
   await page.waitForTimeout(300);
 
-  const root = await page.evaluate(() => document.getElementById('root')?.innerHTML ?? '');
+  // Capture what React renders, not what the page became afterwards.
+  //
+  // AOS stamps `aos-init` onto every [data-aos] element after mount, and `aos-animate` once
+  // one scrolls into view. React renders those sections carrying neither, so leaving the
+  // classes in the markup is a className mismatch on all five — enough by itself to make
+  // hydration bail and discard the whole prerendered page, which is the failure the gate
+  // below exists to catch.
+  //
+  // Stripped from the live DOM before serialising rather than by regex afterwards:
+  // `class="projects-section aos-init"` has to keep the classes around it, and a string
+  // substitution is the wrong tool for that.
+  const root = await page.evaluate(() => {
+    for (const el of document.querySelectorAll('[data-aos]')) {
+      el.classList.remove('aos-init', 'aos-animate');
+      if (el.getAttribute('class') === '') el.removeAttribute('class');
+    }
+    // Particles sizes its canvas from offsetWidth/offsetHeight in an effect, so the DOM
+    // carries width/height attributes React never rendered — and the captured number is
+    // whatever this viewport measured, which no visitor's viewport will agree with.
+    for (const c of document.querySelectorAll('canvas')) {
+      c.removeAttribute('width');
+      c.removeAttribute('height');
+    }
+    return document.getElementById('root')?.innerHTML ?? '';
+  });
   const visible = root
     .replace(/<script[\s\S]*?<\/script>/g, '')
     .replace(/<[^>]+>/g, ' ')

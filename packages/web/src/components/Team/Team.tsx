@@ -129,7 +129,7 @@ const Team = () => {
       <section id="team" className="team-section">
         <div className="team-inner">
           <div className="team-intro">
-            <div className="team-eyebrow">• {eyebrow}</div>
+            <div className="team-eyebrow">{`• ${eyebrow}`}</div>
             <h2>{heading}</h2>
           </div>
 

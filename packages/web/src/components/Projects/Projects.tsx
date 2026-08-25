@@ -55,7 +55,7 @@ const Projects = () => {
         <div className="projects-intro">
           {/* Section-background tier, not the stronger one: this label sits on
               --bg-section, not white, and the stronger tier falls just short of 3:1 there. */}
-          <div className="projects-eyebrow">• {eyebrow}</div>
+          <div className="projects-eyebrow">{`• ${eyebrow}`}</div>
           <h2>{heading}</h2>
         </div>
 

@@ -61,7 +61,7 @@ const About = () => {
                 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", sans-serif',
             }}
           >
-            • {eyebrow}
+            {`• ${eyebrow}`}
           </div>
           <h2
             style={{

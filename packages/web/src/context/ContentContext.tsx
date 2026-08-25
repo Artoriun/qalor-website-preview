@@ -1,5 +1,13 @@
 import { DEFAULT_SITE_CONTENT, type SiteContent } from '@qalor/shared';
-import { createContext, type ReactNode, useCallback, useContext, useEffect, useState } from 'react';
+import {
+  createContext,
+  type ReactNode,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 import { apiGetContent, HAS_API } from '../lib/api';
 import { IS_PRERENDERED } from '../lib/prerendered';
 
@@ -42,6 +50,22 @@ const ContentContext = createContext<ContentValue>({
   refresh: async () => {},
 });
 
+/**
+ * Replace state only when the content actually changed.
+ *
+ * A parsed JSON response is always a new object, so `setContent(fresh)` never matches
+ * React's identity check and re-renders every consumer even when the API returned exactly
+ * what is already on screen — which is the normal case, since the prerendered markup was
+ * built from this same API. Once the page hydrates rather than remounting, that redundant
+ * commit is the only thing left that can repaint after first paint.
+ *
+ * Stringify is enough here and cheaper than it looks: SiteContent is plain JSON, both sides
+ * come from the same serialiser so key order is stable, and this runs once per page load.
+ */
+function sameContent(a: SiteContent, b: SiteContent): boolean {
+  return JSON.stringify(a) === JSON.stringify(b);
+}
+
 export function ContentProvider({ children }: { children: ReactNode }) {
   const [content, setContent] = useState<SiteContent>(SEED);
   // Prerendered pages start settled: their markup is already build-time accurate, so there
@@ -51,7 +75,8 @@ export function ContentProvider({ children }: { children: ReactNode }) {
   const refresh = useCallback(async () => {
     if (!HAS_API) return;
     try {
-      setContent(await apiGetContent());
+      const fresh = await apiGetContent();
+      setContent((prev) => (sameContent(prev, fresh) ? prev : fresh));
     } catch {
       // Keep whatever we have. A failed refresh must not blank the page.
     }
@@ -67,7 +92,7 @@ export function ContentProvider({ children }: { children: ReactNode }) {
     (async () => {
       try {
         const fresh = await apiGetContent();
-        if (!cancelled) setContent(fresh);
+        if (!cancelled) setContent((prev) => (sameContent(prev, fresh) ? prev : fresh));
       } catch {
         // ignored, see refresh()
       } finally {
@@ -79,11 +104,11 @@ export function ContentProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  return (
-    <ContentContext.Provider value={{ content, loading, refresh }}>
-      {children}
-    </ContentContext.Provider>
-  );
+  // Memoised so the provider does not hand every consumer a new object on each render —
+  // without it the `setLoading(false)` commit alone re-renders the whole subtree.
+  const value = useMemo(() => ({ content, loading, refresh }), [content, loading, refresh]);
+
+  return <ContentContext.Provider value={value}>{children}</ContentContext.Provider>;
 }
 
 export function useContent(): ContentValue {

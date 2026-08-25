@@ -1,4 +1,5 @@
-import { createContext, type ReactNode, useCallback, useContext, useState } from 'react';
+import { createContext, type ReactNode, useCallback, useContext, useEffect, useState } from 'react';
+import { IS_PRERENDERED } from '../lib/prerendered';
 
 export type Theme = 'light' | 'dark';
 
@@ -23,7 +24,22 @@ function currentTheme(): Theme {
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setTheme] = useState<Theme>(currentTheme);
+  /**
+   * Prerendered markup is always captured light — the prerenderer runs in a fresh browser
+   * with nothing in localStorage — so a returning visitor who chose dark would otherwise
+   * render ThemeToggle's "Schakel naar lichte modus" against markup that says "Schakel naar
+   * donkere modus", and React would discard the whole page over one aria-label.
+   *
+   * Start where the markup is and correct immediately after. Nothing visible moves: the
+   * colours come from data-theme and CSS custom properties, which index.html's blocking
+   * script already set before first paint. Only the toggle's own label and icon settle a
+   * frame later, and only for visitors who are in dark mode to begin with.
+   */
+  const [theme, setTheme] = useState<Theme>(() => (IS_PRERENDERED ? 'light' : currentTheme()));
+
+  useEffect(() => {
+    setTheme(currentTheme());
+  }, []);
 
   const toggle = useCallback(() => {
     setTheme((prev) => {
