@@ -2,6 +2,32 @@
   padding: 80px 20px;
   background-color: var(--bg-section);
   width: 100%;
+
+  /* Skip rendering this section until it is near the viewport, which is what stops the eight
+     card photos being fetched during the first load.
+
+     They are the largest single cost on a cold mobile visit. The hero is the LCP element and
+     sits on the same Cloudinary origin as every card, so they share one HTTP/2 connection and
+     the hero's priority is diluted across a dozen streams — measured on production at 13
+     Cloudinary requests before LCP and an LCP of 7984-8300ms, against 5 requests and
+     3576-3936ms with this rule in place. Priority is not the lever: fetchpriority and preload
+     were both measured and moved less than the run-to-run spread, because a saturated
+     connection has no ordering left to win. Only not asking for the bytes helps.
+
+     `loading="lazy"` cannot reach these at all — the photos are `--card-image` custom
+     properties consumed as background-image below, and lazy applies to elements, not to
+     backgrounds. Skipping the subtree covers both.
+
+     Deliberately not on #team or #qalor. Chromium keeps a subtree rendered until roughly
+     1200-1400px below the fold; at a 915px viewport #team sits 144px below it and #qalor
+     1188px, so both are inside that margin and the property does nothing for them. Variants
+     covering three and four sections were measured and requested the same five images. */
+  content-visibility: auto;
+  /* Measured 770px at 1440x900 and at 915x412, 800px at 412x915 — the carousel frame carries a
+     fixed min-height and the intro is one heading, so a single value holds everywhere. `auto`
+     lets the browser substitute the real height once it has rendered, so the estimate only
+     matters on the first approach. */
+  contain-intrinsic-size: auto 800px;
 }
 
 .projects-inner {

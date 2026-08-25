@@ -108,7 +108,22 @@ for (const file of [...walk(join(WEB, 'src')), ...walk(SHARED)]) {
     }
   });
 }
-console.log(`✓ Cloudinary URLs: ${cloudinaryUsages} usage(s) all transformed`);
+// The count is a floor, not decoration. The scan above is textual and single-line: it only
+// looks at lines carrying `src={`, `srcSet={` or `url(${` *and* an identifier it has traced to
+// a Cloudinary URL. Move such a URL onto its own line, or through a local whose name it has not
+// traced, and the line stops matching — the check does not fail, it just quietly stops covering
+// that usage. Which is the failure mode a coverage check can least afford, since the output
+// still reads as a tick. Raise this number when a real usage is added.
+const MIN_CLOUDINARY_USAGES = 11;
+if (cloudinaryUsages < MIN_CLOUDINARY_USAGES) {
+  fail(
+    `only ${cloudinaryUsages} Cloudinary usage(s) matched, expected at least ` +
+      `${MIN_CLOUDINARY_USAGES} — a usage stopped being covered rather than being fixed. ` +
+      'Keep the transform call on the same line as the src, srcSet or url() it feeds.',
+  );
+} else {
+  console.log(`✓ Cloudinary URLs: ${cloudinaryUsages} usage(s) all transformed`);
+}
 
 // ---- 2. bundle budgets ------------------------------------------------------------------
 const assets = join(WEB, 'dist/assets');

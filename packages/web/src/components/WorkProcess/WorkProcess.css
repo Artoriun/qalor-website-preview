@@ -1,3 +1,37 @@
+/* Same deferral as .projects-section — see the comment there for the measurements and for why
+   only these two sections get it.
+
+   Keyed on the id because this section carries no class of its own; its other styles are inline
+   in WorkProcess.tsx, and none of them set these two properties, so nothing here is competing
+   with them.
+
+   This is also what finally makes the `loading="lazy"` on the three step images do something. A
+   skipped subtree has no layout box, so the browser's lazy-load observer never sees an
+   intersection no matter how wide its distance threshold is — and that threshold is wide enough
+   (and widens further on a slow connection) that lazy alone was loading all three during the
+   first paint. Which means the attribute is now load-bearing rather than decorative: removing
+   `loading="lazy"` from the step images silently un-defers them, because content-visibility does
+   not reach an eager <img> — the parser fetches that before layout ever happens. e2e/deferral
+   .spec.ts asserts the pairing so that removal fails a check instead of a Lighthouse run nobody
+   reruns. */
+#how-it-works {
+  content-visibility: auto;
+  /* Measured 1388px at 1440 wide, 2105px at 915, 2438px at 412. The breakpoints below are 768
+     and 1024 on purpose: they are the same widths WorkProcess.tsx switches isMobile/isTablet on,
+     so the estimate changes when the layout it is estimating changes. Keep them in step. */
+  contain-intrinsic-size: auto 1400px;
+}
+@media (max-width: 1024px) {
+  #how-it-works {
+    contain-intrinsic-size: auto 2100px;
+  }
+}
+@media (max-width: 768px) {
+  #how-it-works {
+    contain-intrinsic-size: auto 2450px;
+  }
+}
+
 .vertical-line-mobile {
   position: absolute;
   /* Centered on the number badge: the badge column is 60px wide and the circle fills
