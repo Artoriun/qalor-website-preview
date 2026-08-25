@@ -80,6 +80,10 @@ npm run hash-password    # prints an ADMIN_PASSWORD_HASH
   pause button, arrow-key navigation and a `prefers-reduced-motion` opt-out
 - **Team CVs** open in a modal rendered by the browser's own PDF viewer, no library
 - **Images** from Cloudinary, requested at the size they are displayed and served as WebP
+- **Nothing moves once the page paints** — Inter is declared with `font-display: optional`, so
+  text is never re-laid-out when the font arrives, and the header logo is inlined as a data URI
+  rather than requested. Add font weights in `packages/web/src/fonts.css`, not by importing an
+  `@fontsource` stylesheet
 
 ---
 
@@ -104,6 +108,11 @@ these assets are cached for.
 `npm run ci` runs the pipeline in CI's order: Biome, `tsc`, API and unit tests, a Playwright
 layout and accessibility sweep, the suite again against the built output and its subpath
 variant, a gzipped bundle budget, and Lighthouse.
+
+Prerendering is a gate of its own, and it inspects the bytes it is about to write rather than
+the source that produced them. It refuses to emit a page that React cannot hydrate, one whose
+`@font-face` rules would swap the font in after first paint, or one whose header logo is a file
+request instead of a data URI.
 
 ---
 
