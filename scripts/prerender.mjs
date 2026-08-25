@@ -21,7 +21,7 @@
  * fetched) would trip the hydration gate below just as surely as a real content bug.
  */
 import { spawn } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { chromium } from '@playwright/test';
 import {
@@ -114,6 +114,24 @@ const content = await loadContent();
 // is invisible until something runs this script twice in one job — as CI now does, once for
 // the domain-root build and once for the subpath one. The second run then fails --strictPort
 // and reports an empty capture, which points nowhere near the real cause.
+// Delete this script's own output from a previous run before anything serves dist.
+//
+// `vite preview` serves a real file in preference to the SPA fallback, so a leftover
+// dist/<route>/index.html is what capture() below re-reads: last run's markup, rendered by
+// last run's bundle, with last run's base path baked into every URL. Nothing empties dist
+// in between — turbo caches the build, and on a cache hit Vite never runs, so its
+// emptyOutDir never fires.
+//
+// That made the output depend on what happened to be in dist beforehand. A subpath build
+// emitted '/#how-it-works' and a root-absolute footer logo on all four service pages while
+// the bundle it was supposedly capturing had the base path compiled in correctly, and the
+// subpath suite went from passing to failing with no change to the source. Both links are
+// broken on a project-subpath host: one navigates off the site, the other 404s.
+for (const route of ROUTES) {
+  if (route.path === '/') continue;
+  rmSync(join(DIST, route.path), { recursive: true, force: true });
+}
+
 const server = spawn('npx', ['vite', 'preview', '--port', String(PORT), '--strictPort'], {
   cwd: new URL('../packages/web/', import.meta.url).pathname,
   stdio: 'ignore',
@@ -349,6 +367,41 @@ for (const route of ROUTES) {
     .replace(/<title>[^<]*<\/title>/, `<title>${esc(route.title)}</title>`)
     .replace('</title>', `</title>\n    ${headFor(route)}\n    ${preloadTag}\n    ${contentScript}`)
     .replace('<div id="root"></div>', `<div id="root">${root}</div>`);
+
+  // Two properties of the exact bytes about to be written. Both were visible bugs on
+  // production, both are reintroduced by an ordinary-looking edit, and nothing else here
+  // would notice — the hydration gate above passes either way, and check-budgets.mjs runs
+  // before this script, against the un-prerendered shell.
+  //
+  // Every @font-face must say `optional`. @fontsource ships every face as `swap`, so adding
+  // a weight the obvious way — importing '@fontsource/inter/800.css' — silently restores the
+  // reflow that widened the hero h1 from 244.0px to 260.1px about a second after paint.
+  // packages/web/src/fonts.css is where weights get added instead.
+  const swaps = (html.match(/font-display:\s*swap/g) ?? []).length;
+  if (swaps > 0) {
+    throw new Error(
+      `${route.path || '/'}: ${swaps} @font-face rule(s) use font-display: swap. Declare the ` +
+        `weight in packages/web/src/fonts.css with 'optional' rather than importing an ` +
+        `@fontsource stylesheet, which ships 'swap' and reflows the text after first paint.`,
+    );
+  }
+
+  // The header logo must be inlined. Scoped to <nav> because the footer carries an <img> with
+  // the same alt text and is correctly a file — it is below the fold, where a second copy of
+  // the base64 would be paid by everyone to help nobody. As a file the header logo was an
+  // 11KB Low-priority image behind ~287KB of higher-priority traffic and appeared at ~2.7s;
+  // dropping '?inline' from the import in Navbar.tsx puts it back with nothing else changing.
+  const nav = html.match(/<nav[\s>][\s\S]*?<\/nav>/);
+  if (!nav) throw new Error(`${route.path || '/'}: no <nav> in the prerendered markup`);
+  const logo = nav[0].match(/<img[^>]*alt="Qalor Logo"[^>]*>/);
+  if (!logo) throw new Error(`${route.path || '/'}: no header logo <img> inside <nav>`);
+  if (!/src="data:/.test(logo[0])) {
+    const src = logo[0].match(/src="([^"]*)"/)?.[1] ?? '(none)';
+    throw new Error(
+      `${route.path || '/'}: the header logo is a file request (src="${src}") rather than a ` +
+        `data URI. Navbar.tsx imports it with '?inline' so that it costs no request at all.`,
+    );
+  }
 
   const outDir = join(DIST, route.path);
   mkdirSync(outDir, { recursive: true });
