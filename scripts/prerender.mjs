@@ -21,7 +21,7 @@
  * fetched) would trip the hydration gate below just as surely as a real content bug.
  */
 import { spawn } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { chromium } from '@playwright/test';
 import {
@@ -331,6 +331,60 @@ const heroOptimize = (w) =>
     .replace(/\.(jpe?g|png)$/i, '.webp');
 const heroSrcSet = [480, 768, 1024, 1200].map((w) => `${heroOptimize(w)} ${w}w`).join(', ');
 const preloadTag = `<link rel="preload" as="image" href="${esc(heroOptimize(1024))}" imagesrcset="${esc(heroSrcSet)}" imagesizes="(max-width: 768px) 100vw, 50vw" fetchpriority="high" />`;
+/**
+ * Inter's own files, preloaded.
+ *
+ * Every @font-face @fontsource ships is `font-display: swap`, so until Inter arrives the page
+ * paints in the system fallback and re-lays-out the text when it lands. The fallback is
+ * narrower: measured on a cold Pixel 8a load of the live site, the hero h1's glyphs went
+ * 244.0px -> 260.1px wide and the h2's 232.0px -> 251.0px, at 1.08s — long after the page
+ * looks finished, which is what reads as the heading stretching on its own.
+ *
+ * Inlining the stylesheet above already makes the @font-face rules parse-time visible; that
+ * is not the delay. A font is only *requested* once layout matches a face to text that uses
+ * it, so the request starts after the bundle and the hero image are already in flight and
+ * queues behind them. Preloading starts it at parse time instead.
+ *
+ * Only the weights the first screen renders (h1 700, h2 500, body 400) and only the latin
+ * subset. 300 and 600 are imported by main.tsx but nothing above the fold uses them, and
+ * bytes spent here are bytes the LCP hero image is competing for.
+ *
+ * The hashes come from the build, so read them off dist rather than hardcoding: a stale
+ * filename is a preload the browser fetches and never uses, followed by the real download.
+ */
+const ABOVE_FOLD_WEIGHTS = [400, 500, 700];
+const fontFiles = ABOVE_FOLD_WEIGHTS.map((w) => {
+  const prefix = `inter-latin-${w}-normal-`;
+  const found = readdirSync(join(DIST, 'assets')).filter(
+    (f) => f.startsWith(prefix) && f.endsWith('.woff2'),
+  );
+  if (found.length !== 1) {
+    throw new Error(
+      `expected exactly one ${prefix}*.woff2 in dist/assets, found ${found.length}. ` +
+        `If @fontsource's filenames changed, this preload is silently pointing at nothing.`,
+    );
+  }
+  return found[0];
+});
+// Not a hardcoded '/assets/': VITE_BASE serves the Pages preview from a subpath, and a
+// preload at the wrong path is a 404 plus the real font downloading afterwards anyway.
+// Take the base from the bundle's own <script>, which vite already wrote correctly.
+const assetBase = template.match(/src="([^"]*)assets\/index-[^"]*\.js"/)?.[1];
+if (assetBase === undefined) {
+  throw new Error(
+    'could not find the bundle <script> in dist/index.html to read the base path from',
+  );
+}
+// crossorigin is required even though these are same-origin. Fonts are fetched in CORS mode,
+// and a preload whose mode disagrees with the real request is a separate cache entry — the
+// file downloads twice and the swap happens regardless.
+const fontPreloadTags = fontFiles
+  .map(
+    (f) =>
+      `<link rel="preload" as="font" type="font/woff2" href="${esc(`${assetBase}assets/${f}`)}" crossorigin />`,
+  )
+  .join('\n    ');
+
 // Escapes '<' so a stray "</script>" inside admin-edited text (a body field, say) can't
 // prematurely close this tag — the rest of `template` after it would then render as raw
 // text on the page instead of being part of the document, and depending on what followed,
@@ -347,7 +401,10 @@ for (const route of ROUTES) {
       `<meta name="description" content="${esc(route.description)}" />`,
     )
     .replace(/<title>[^<]*<\/title>/, `<title>${esc(route.title)}</title>`)
-    .replace('</title>', `</title>\n    ${headFor(route)}\n    ${preloadTag}\n    ${contentScript}`)
+    .replace(
+      '</title>',
+      `</title>\n    ${headFor(route)}\n    ${preloadTag}\n    ${fontPreloadTags}\n    ${contentScript}`,
+    )
     .replace('<div id="root"></div>', `<div id="root">${root}</div>`);
 
   const outDir = join(DIST, route.path);
