@@ -1,6 +1,6 @@
 import type { TeamMember } from '@qalor/shared';
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
-import qalorLogoImg from '../../assets/images/figures/qalor logo.png';
+import qalorLogoImg from '../../assets/images/figures/qalor-logo.webp';
 import { useContent } from '../../context/ContentContext';
 import { optimizeUrl } from '../../lib/images';
 import { canEmbedPdf, withBase } from '../../lib/pdf';

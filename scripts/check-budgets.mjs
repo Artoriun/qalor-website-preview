@@ -20,7 +20,14 @@ import { gzipSync } from 'node:zlib';
 
 const WEB = new URL('../packages/web/', import.meta.url).pathname;
 const SHARED = new URL('../packages/shared/', import.meta.url).pathname;
-const BUDGET_GZIP = { '.js': true, '.css': true, initial: 90 * 1024 };
+// 95KB rather than 90KB since the header logo became a data URI (Navbar.tsx). It is worth
+// the ~5KB: as a file it was an 11KB Low-priority image behind ~287KB of High-priority
+// requests, so it painted at ~2.7s on a cold mobile load, and neither fetchpriority nor
+// preloading moved it outside the run-to-run spread — a saturated connection does not
+// reorder. Inlining removed the request instead and put it at ~1.25s. It is counted twice,
+// once in the entry chunk and once in the prerendered markup, because React has to render
+// the same src string it hydrates against.
+const BUDGET_GZIP = { '.js': true, '.css': true, initial: 95 * 1024 };
 
 // Lazy chunks used to be printed as "(not budgeted)", which meant nobody saw the CV modal
 // pull in a PDF viewer and its worker — 1.54MB transferred on click, to display a 102KB

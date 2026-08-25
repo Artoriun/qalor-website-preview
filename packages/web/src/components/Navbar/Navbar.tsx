@@ -1,5 +1,12 @@
 import { type CSSProperties, useEffect, useRef, useState } from 'react';
-import qalorLogo from '../../assets/images/figures/qalor logo.png';
+// ?inline forces a data URI past Vite's 4KB threshold, so the header logo costs no request.
+// As a file it was one 11KB Low-priority image among the ~30 this page requests, and it
+// finished around 2.7s on a cold mobile load — not because anything about it was wrong, but
+// because the page ships ~2.1MB and Low-priority streams get what is left. Priority was not
+// the lever: measured against production, fetchpriority="high" moved it 104ms, inside the
+// run-to-run spread. Removing the request moved it to 1247ms from 4047ms, tight enough that
+// the two sample ranges do not overlap. Costs ~7KB of base64 in each prerendered page.
+import qalorLogo from '../../assets/images/figures/qalor-logo.webp?inline';
 import './Navbar.css';
 import ArrowRight from '../ArrowRight';
 import ThemeToggle from './ThemeToggle';
