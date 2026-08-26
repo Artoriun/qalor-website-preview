@@ -81,3 +81,31 @@ export function dprSrcSet(url: string, w: number): string {
  * previous fixed 600 was under that even at 1x, and less than half what a 2x screen needs.
  */
 export const ABOUT_W = 700;
+
+/**
+ * Candidate widths for the About portrait.
+ *
+ * Capped at 1400 because the source is 1666x2221 — asking beyond it buys nothing but bytes.
+ * The steps are chosen against what the layout actually asks for, not for roundness: 668 CSS px
+ * at 2x wants 1336 and the widest phone branch at 3x wants ~1170, which is what 1400 and 1200
+ * are for. 700 rather than 800 because the two cases that land there need 668 and 640 — a
+ * desktop at 1x and a small phone at 2x — and 700 covers both for 82KB where 800 costs 99KB.
+ */
+const ABOUT_WIDTHS = [400, 600, 700, 1000, 1200, 1400];
+
+/**
+ * `srcset` for the About portrait, as widths rather than DPR candidates.
+ *
+ * dprSrcSet was the wrong tool here and cost real bytes. An x-descriptor says "the box is
+ * always ABOUT_W wide", which is a desktop assumption: the box is 668 CSS px on a wide screen
+ * but only `100vw - 40px` on a phone — 372 at 412. A 2.625x phone therefore took the 2x
+ * candidate, w_1400 at 292KB, to fill a box needing 977. With widths and the `sizes` attribute
+ * in About.tsx the same phone takes w_1000 at 174KB.
+ *
+ * Kept beside fullBleedSrcSet rather than merged with it: the hero is full-bleed and this sits
+ * in a half-column, so they share a shape but never a width list.
+ */
+export function aboutSrcSet(url: string): string {
+  if (!url.includes('/image/upload/')) return '';
+  return ABOUT_WIDTHS.map((w) => `${optimizeUrl(url, w)} ${w}w`).join(', ');
+}

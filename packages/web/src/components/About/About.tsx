@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useContent } from '../../context/ContentContext';
-import { ABOUT_W, dprSrcSet, optimizeUrl } from '../../lib/images';
+import { ABOUT_W, aboutSrcSet, optimizeUrl } from '../../lib/images';
 
 const About = () => {
   const { content } = useContent();
@@ -154,7 +154,15 @@ const About = () => {
           {/* Right side - Image */}
           <img
             src={optimizeUrl(image, ABOUT_W)}
-            srcSet={dprSrcSet(image, ABOUT_W)}
+            srcSet={aboutSrcSet(image)}
+            /* Measured against the rendered box rather than inferred from the breakpoints.
+               The section pads 20px a side, so the single-column image is exactly
+               100vw - 40px (372 at 412, 728 at 768, 875 at 915). The two-column one also
+               loses the 64px grid gap and is halved, which lands 460/588/668 at
+               1024/1280/1440, and 668 is where the 1400px container stops it growing.
+               The max-height rule comes first because About turns single-column on a short
+               viewport as well as a narrow one, which is what a phone in landscape is. */
+            sizes="(max-height: 500px) calc(100vw - 40px), (max-width: 768px) calc(100vw - 40px), (max-width: 1440px) calc((100vw - 104px) / 2), 668px"
             alt="Peter & Huub"
             loading="lazy"
             data-aos="zoom-in"

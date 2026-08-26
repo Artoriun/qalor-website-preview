@@ -2,7 +2,7 @@
 /**
  * Two build-time guards.
  *
- * 1. Cloudinary image URLs must go through optimizeUrl()/fullBleedSrcSet()/dprSrcSet()
+ * 1. Cloudinary image URLs must go through one of the transforms in TRANSFORMS below
  *    (packages/web/src/lib/images.ts). The bug this exists to catch already happened
  *    once: a raw Cloudinary URL constant used directly in `src=` served the untransformed
  *    original (several MB, no f_auto/q_auto) — the thing that was still true even after
@@ -46,7 +46,7 @@ const fail = (msg) => {
   failed = true;
 };
 
-// ---- 1. Cloudinary URLs must go through optimizeUrl()/fullBleedSrcSet()/dprSrcSet() ----
+// ---- 1. Cloudinary URLs must go through one of the transforms below --------------------
 const walk = (dir) =>
   readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
     const p = join(dir, e.name);
@@ -60,6 +60,12 @@ const walk = (dir) =>
 // originates in a different package. Update this if packages/shared/src/index.ts grows
 // another such field.
 const SHARED_IMAGE_FIELDS = new Set(['image', 'photoUrl']);
+
+// Every helper in packages/web/src/lib/images.ts that produces a delivery URL. A new one has to
+// be added here the day it is written, or the line calling it fails this check — which is the
+// safe direction, since the alternative is a transform nobody is checking.
+const TRANSFORM_NAMES = ['optimizeUrl', 'fullBleedSrcSet', 'dprSrcSet', 'aboutSrcSet'];
+const TRANSFORMS = new RegExp(TRANSFORM_NAMES.map((n) => `${n}\\(`).join('|'));
 
 let cloudinaryUsages = 0;
 for (const file of [...walk(join(WEB, 'src')), ...walk(SHARED)]) {
@@ -100,9 +106,9 @@ for (const file of [...walk(join(WEB, 'src')), ...walk(SHARED)]) {
       if (new RegExp(`^\\s*(const\\s+${name}\\s*=|${name}\\s*:)`).test(line)) continue;
       if (!/\bsrc=\{|\bsrcSet=\{|url\(\$\{/.test(line)) continue;
       cloudinaryUsages++;
-      if (!/optimizeUrl\(|fullBleedSrcSet\(|dprSrcSet\(/.test(line)) {
+      if (!TRANSFORMS.test(line)) {
         fail(
-          `${file.replace(WEB, 'packages/web/').replace(SHARED, 'packages/shared/')}:${i + 1} uses ${name} without optimizeUrl()/fullBleedSrcSet()/dprSrcSet(): ${line.trim()}`,
+          `${file.replace(WEB, 'packages/web/').replace(SHARED, 'packages/shared/')}:${i + 1} uses ${name} without one of ${TRANSFORM_NAMES.join('/')}: ${line.trim()}`,
         );
       }
     }
