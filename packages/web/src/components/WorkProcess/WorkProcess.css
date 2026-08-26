@@ -16,17 +16,22 @@
    reruns. */
 #how-it-works {
   content-visibility: auto;
-  /* Measured 1388px at 1440 wide, 2105px at 915, 2438px at 412. The breakpoints below are 768
-     and 1024 on purpose: they are the same widths WorkProcess.tsx switches isMobile/isTablet on,
-     so the estimate changes when the layout it is estimating changes. Keep them in step. */
-  contain-intrinsic-size: auto 1400px;
+  /* This one cannot be exact the way .projects-section is: the height is a continuous function
+     of width, measured from 1388px at 1440 down through 2037 at 768 to 2623 at 360, because the
+     step copy rewraps the whole way. So these are fitted to keep the worst case small rather
+     than pretending a breakpoint makes them right, and the section sits far enough above the
+     fold that the correction lands off-screen while a visitor scrolls.
+
+     A previous 2450px for everything under 768 was 413px out at exactly 768, which is the
+     largest error in the set and the reason the ranges below are split where they are. */
+  contain-intrinsic-size: auto 1500px;
 }
 @media (max-width: 1024px) {
   #how-it-works {
-    contain-intrinsic-size: auto 2100px;
+    contain-intrinsic-size: auto 2000px;
   }
 }
-@media (max-width: 768px) {
+@media (max-width: 480px) {
   #how-it-works {
     contain-intrinsic-size: auto 2450px;
   }

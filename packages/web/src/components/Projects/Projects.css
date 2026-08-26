@@ -23,11 +23,24 @@
      1188px, so both are inside that margin and the property does nothing for them. Variants
      covering three and four sections were measured and requested the same five images. */
   content-visibility: auto;
-  /* Measured 770px at 1440x900 and at 915x412, 800px at 412x915 — the carousel frame carries a
-     fixed min-height and the intro is one heading, so a single value holds everywhere. `auto`
-     lets the browser substitute the real height once it has rendered, so the estimate only
-     matters on the first approach. */
-  contain-intrinsic-size: auto 800px;
+  /* Exact, not approximate, and that matters more here than the comment length suggests. The
+     estimate is what the section occupies until it renders, so any error moves everything below
+     it at the moment it does — and this section is the one an anchor link or a scrollIntoView
+     lands directly on, which is precisely when a shift is felt rather than absorbed off-screen.
+     An 800px guess against a real 770 shifted the page 30px on arrival and made the carousel's
+     tap-versus-drag test intermittent, since the frame moved between measuring it and pressing.
+
+     Measured at 770px for every width down to 769 and 740px below that: the carousel frame has
+     a fixed min-height and the intro is a single heading, so only the section padding changes.
+     `auto` then replaces the estimate with the real height once rendered, so a second approach
+     is exact regardless. */
+  contain-intrinsic-size: auto 770px;
+}
+
+@media (max-width: 768px) {
+  .projects-section {
+    contain-intrinsic-size: auto 740px;
+  }
 }
 
 .projects-inner {
