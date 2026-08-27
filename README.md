@@ -121,6 +121,11 @@ request instead of a data URI.
 Production deploys by FTP from `master`, and only after every check passes. The GitHub Pages
 preview above is built from `main` with a base path and a `noindex`.
 
+The preview repository is a mirror of this one — push it with `npm run sync:preview`, which
+force-pushes `master` onto its `main` while holding back `.github/dependabot.yml`. Dependabot
+reads that file wherever it finds it, and updates raised on a mirror can never reach this
+source: the next sync simply overwrites them.
+
 **Node 22** is required (`.nvmrc`).
 
 ---
