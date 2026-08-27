@@ -2,7 +2,10 @@
   "compilerOptions": {
     "target": "ES2022",
     "module": "commonjs",
-    "moduleResolution": "node",
+    /* moduleResolution is deliberately absent: TypeScript 7 removed the "node" (node10)
+       value this used to name, and the default that "module": "commonjs" implies is what
+       this package wants anyway. The sibling poetry API runs the same CommonJS setup with
+       no moduleResolution line at all. */
     "lib": ["ES2022"],
     "outDir": "dist",
     "rootDir": "src",
