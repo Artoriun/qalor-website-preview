@@ -4,7 +4,40 @@ import { expect, test } from './fixtures';
 
 const AXE_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
 
+/**
+ * Waits for anything still moving, so contrast is measured on settled colour.
+ *
+ * The dark-mode helper below already knew about this and slept 250ms for it. The light-mode
+ * sweeps did not, and axe 4.13 caught the hero's contact button mid-fade — reporting a
+ * contrast failure on `#2b1400` over `#fff`, which is about 15:1 once it has arrived. Waiting
+ * on the animations themselves is both more reliable than a fixed sleep and faster.
+ *
+ * Infinite animations are skipped: a decorative loop has no finished state, so awaiting one
+ * waits forever rather than settling.
+ */
+async function animationsSettled(page: Page) {
+  await page.evaluate(async () => {
+    const settling = Promise.all(
+      document
+        .getAnimations()
+        // Only what is actually going somewhere. A decorative loop has no finished state, and
+        // a paused animation's promise never resolves either — the CV modal has one, and
+        // awaiting it hung the sweep for the full test timeout instead of reporting anything.
+        .filter(
+          (a) =>
+            a.playState === 'running' &&
+            a.effect?.getTiming().iterations !== Number.POSITIVE_INFINITY,
+        )
+        .map((a) => a.finished.catch(() => {})),
+    );
+    // A ceiling regardless, so this can never be the reason a run hangs. Anything still
+    // moving after two seconds is not a transition axe is about to misread.
+    await Promise.race([settling, new Promise((resolve) => setTimeout(resolve, 2000))]);
+  });
+}
+
 async function assertNoViolations(page: Page, include?: string) {
+  await animationsSettled(page);
   const builder = new AxeBuilder({ page }).withTags(AXE_TAGS);
   if (include) builder.include(include);
   const { violations } = await builder.analyze();
