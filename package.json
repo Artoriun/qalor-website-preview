@@ -26,7 +26,8 @@
     "check:lighthouse": "node scripts/check-lighthouse.mjs",
     "hash-password": "node scripts/hash-password.mjs",
     "ci": "node scripts/ci-local.mjs",
-    "render:env": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/render-env.mjs"
+    "render:env": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/render-env.mjs",
+    "sync:preview": "node scripts/sync-preview.mjs"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.12.1",
