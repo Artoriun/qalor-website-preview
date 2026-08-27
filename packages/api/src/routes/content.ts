@@ -188,6 +188,50 @@ contentRouter.put(
   }),
 );
 
+// Registered before the `/:list` routes below, and it has to stay there. Express matches in
+// registration order, so with this underneath, `POST /api/content/upload` is captured by
+// `/:list` with list="upload" and answered `404 unknown list 'upload'` — which is exactly
+// what the admin portal's image and CV uploads were getting. upload.test.ts pins it.
+/**
+ * One upload endpoint for everything — a singleton's image (hero.image, about.image), a
+ * list item's image, or a team member's CV PDF. Not scoped to a section: uploading doesn't
+ * write any content by itself, it just returns a URL the client then puts in a normal PUT
+ * (the same way pasting an image URL by hand would). `resource_type: 'auto'` lets
+ * Cloudinary store either kind — images get its normal image pipeline (so packages/web's
+ * optimizeUrl() transforms still work), a PDF is stored as a raw asset and served back
+ * as-is.
+ */
+contentRouter.post(
+  '/upload',
+  requireAuth,
+  upload.single('file'),
+  asyncHandler(async (req, res) => {
+    if (!process.env.CLOUDINARY_URL) {
+      res.status(503).json({ error: 'Upload is not configured. Set CLOUDINARY_URL.' });
+      return;
+    }
+    if (!req.file) {
+      res.status(400).json({ error: 'No file provided' });
+      return;
+    }
+    try {
+      const result = await new Promise<{ secure_url: string }>((resolve, reject) => {
+        cloudinary.uploader
+          .upload_stream(
+            { folder: 'content', public_id: `${Date.now()}`, resource_type: 'auto' },
+            (error, uploaded) =>
+              error ? reject(error) : resolve(uploaded as { secure_url: string }),
+          )
+          .end(req.file?.buffer);
+      });
+      res.json({ url: result.secure_url });
+    } catch (err) {
+      console.error('[content] upload failed:', err);
+      res.status(500).json({ error: 'Upload failed' });
+    }
+  }),
+);
+
 contentRouter.post(
   '/:list',
   requireAuth,
@@ -239,45 +283,5 @@ contentRouter.delete(
     }
     await db.collection(list).doc(id).delete();
     res.json({ ok: true });
-  }),
-);
-
-/**
- * One upload endpoint for everything — a singleton's image (hero.image, about.image), a
- * list item's image, or a team member's CV PDF. Not scoped to a section: uploading doesn't
- * write any content by itself, it just returns a URL the client then puts in a normal PUT
- * (the same way pasting an image URL by hand would). `resource_type: 'auto'` lets
- * Cloudinary store either kind — images get its normal image pipeline (so packages/web's
- * optimizeUrl() transforms still work), a PDF is stored as a raw asset and served back
- * as-is.
- */
-contentRouter.post(
-  '/upload',
-  requireAuth,
-  upload.single('file'),
-  asyncHandler(async (req, res) => {
-    if (!process.env.CLOUDINARY_URL) {
-      res.status(503).json({ error: 'Upload is not configured. Set CLOUDINARY_URL.' });
-      return;
-    }
-    if (!req.file) {
-      res.status(400).json({ error: 'No file provided' });
-      return;
-    }
-    try {
-      const result = await new Promise<{ secure_url: string }>((resolve, reject) => {
-        cloudinary.uploader
-          .upload_stream(
-            { folder: 'content', public_id: `${Date.now()}`, resource_type: 'auto' },
-            (error, uploaded) =>
-              error ? reject(error) : resolve(uploaded as { secure_url: string }),
-          )
-          .end(req.file?.buffer);
-      });
-      res.json({ url: result.secure_url });
-    } catch (err) {
-      console.error('[content] upload failed:', err);
-      res.status(500).json({ error: 'Upload failed' });
-    }
   }),
 );
