@@ -49,6 +49,47 @@ const authHeader = () => ({
 
 const getContent = () => fetch(`${base}/api/content`).then((r) => r.json());
 
+describe('GET /api/content/all', () => {
+  const authHeaders = () => ({
+    Authorization: `Bearer ${jwt.sign({ admin: true, epoch: 0 }, SECRET, { algorithm: 'HS256' })}`,
+  });
+
+  /**
+   * The portal needs to see what the site does not. Hiding a bundled team member writes
+   * `deleted: true`, and the public route filters those out — so without this the portal could
+   * hide someone and never get them back, which is worse than not offering it at all.
+   */
+  test('requires a token', async () => {
+    const res = await fetch(`${base}/api/content/all`);
+    assert.equal(res.status, 401);
+  });
+
+  test('shows a hidden item that the public route omits', async () => {
+    await fetch(`${base}/api/content/team/1`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', ...authHeaders() },
+      body: JSON.stringify({ deleted: true }),
+    });
+
+    const publicTeam = (await (await fetch(`${base}/api/content`)).json()) as {
+      team: { id: unknown }[];
+    };
+    assert.ok(
+      !publicTeam.team.some((t) => String(t.id) === '1'),
+      'a hidden member must not reach the site',
+    );
+
+    const adminRes = await fetch(`${base}/api/content/all`, {
+      headers: authHeaders(),
+    });
+    assert.equal(adminRes.status, 200);
+    const adminTeam = (await adminRes.json()) as { team: { id: unknown; deleted?: boolean }[] };
+    const hidden = adminTeam.team.find((t) => String(t.id) === '1');
+    assert.ok(hidden, 'the portal must still see it, or hiding is a one-way door');
+    assert.equal(hidden?.deleted, true, 'and know that it is hidden, so it can say so');
+  });
+});
+
 describe('GET /api/content', () => {
   test('serves the bundled defaults with nothing overridden', async () => {
     const content = (await getContent()) as { hero: typeof DEFAULT_HERO };

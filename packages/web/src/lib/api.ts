@@ -80,8 +80,33 @@ export async function apiUpdateSite(id: string, data: Record<string, unknown>): 
 export type ListName = 'projects' | 'team' | 'workProcessSteps';
 export type ListItem = Project | TeamMember | WorkProcessStep;
 
-export async function apiCreateItem(list: ListName): Promise<ListItem> {
-  const res = await authed(`/api/content/${list}`, { method: 'POST' });
+/**
+ * Creates a list item, optionally with its content already filled in.
+ *
+ * The portal composes a new item in the browser and sends it on Save, so the fields travel with
+ * the creation rather than as a second request. Without a body the API falls back to its own
+ * placeholder template, which is what the old click-to-create behaviour relied on.
+ */
+/**
+ * Content as the portal must see it, including items hidden from the site.
+ *
+ * The public route filters hidden items out, which is right for a visitor and wrong for an
+ * editor: without this, hiding a built-in team member would remove it from the portal too and
+ * there would be no way to bring it back.
+ */
+export async function apiGetAllContent(): Promise<SiteContent> {
+  const res = await authed('/api/content/all');
+  return res.json() as Promise<SiteContent>;
+}
+
+export async function apiCreateItem(
+  list: ListName,
+  data?: Record<string, unknown>,
+): Promise<ListItem> {
+  const res = await authed(`/api/content/${list}`, {
+    method: 'POST',
+    ...(data ? { body: JSON.stringify(data) } : {}),
+  });
   return res.json() as Promise<ListItem>;
 }
 

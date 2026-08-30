@@ -30,15 +30,17 @@ process.env.CLOUDINARY_URL = 'cloudinary://key:secret@example';
 let server: Server;
 let base = '';
 let lastUploadBytes = -1;
+let lastOptions: Record<string, unknown> = {};
 
 before(async () => {
   (cloudinary.uploader as unknown as { upload_stream: unknown }).upload_stream = (
-    _opts: unknown,
+    opts: Record<string, unknown>,
     cb: (err: unknown, result: { secure_url: string }) => void,
   ) => ({
     end: (buf: Buffer) => {
       lastUploadBytes = buf.length;
-      cb(null, { secure_url: 'https://example.test/uploaded.png' });
+      lastOptions = opts;
+      cb(null, { secure_url: 'https://example.test/uploaded' });
     },
   });
 
@@ -65,9 +67,9 @@ const post = (body: BodyInit | undefined, auth = true) =>
     body,
   });
 
-const form = (bytes: number) => {
+const form = (bytes: number, type = 'image/png', name = 'x.png') => {
   const fd = new FormData();
-  fd.append('file', new Blob([new Uint8Array(bytes)], { type: 'image/png' }), 'x.png');
+  fd.append('file', new Blob([new Uint8Array(bytes)], { type }), name);
   return fd;
 };
 
@@ -85,7 +87,7 @@ describe('POST /api/content/upload', () => {
     const res = await post(form(2048));
     assert.equal(res.status, 200);
     const { url } = (await res.json()) as { url: string };
-    assert.equal(url, 'https://example.test/uploaded.png');
+    assert.equal(url, 'https://example.test/uploaded');
     assert.equal(lastUploadBytes, 2048, 'the whole file should reach the uploader');
   });
 
@@ -101,5 +103,31 @@ describe('POST /api/content/upload', () => {
     lastUploadBytes = -1;
     assert.equal((await post(form(1024), false)).status, 401);
     assert.equal(lastUploadBytes, -1, 'nothing should have been parsed or uploaded');
+  });
+});
+
+describe('what we ask Cloudinary to store', () => {
+  /**
+   * A PDF uploaded as an image is stored, and then refused on delivery: Cloudinary blocks PDFs
+   * on /image/upload/ by default, which returns 401 and reaches the browser as
+   * ERR_INVALID_RESPONSE. A client uploaded a CV and could not open it. Raw delivery is not
+   * covered by that block.
+   */
+  test('a PDF goes to raw storage, with the extension kept', async () => {
+    const res = await post(form(2048, 'application/pdf', 'cv.pdf'));
+    assert.equal(res.status, 200);
+    assert.equal(lastOptions.resource_type, 'raw');
+    assert.match(
+      String(lastOptions.public_id),
+      /\.pdf$/,
+      'raw uploads keep no format of their own, so the extension has to be in the public_id or ' +
+        'the delivered file has none',
+    );
+  });
+
+  test('an image is stored as an image', async () => {
+    const res = await post(form(2048, 'image/png', 'x.png'));
+    assert.equal(res.status, 200);
+    assert.equal(lastOptions.resource_type, 'image');
   });
 });
