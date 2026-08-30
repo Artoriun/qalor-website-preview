@@ -214,11 +214,22 @@ contentRouter.post(
       res.status(400).json({ error: 'No file provided' });
       return;
     }
+    // 'auto' classifies a PDF as an image, and Cloudinary refuses to deliver PDFs from
+    // /image/upload/ unless the account opts in — the asset stores fine and then answers 401,
+    // which reaches the browser as ERR_INVALID_RESPONSE. Raw delivery is not covered by that
+    // block, so anything that is not an image goes there instead.
+    //
+    // Raw resources carry no format of their own, so the extension has to be part of the
+    // public_id or the delivered file arrives without one.
+    const isImage = req.file.mimetype.startsWith('image/');
+    const extension = req.file.originalname.match(/\.[a-z0-9]+$/i)?.[0] ?? '';
+    const publicId = isImage ? `${Date.now()}` : `${Date.now()}${extension}`;
+
     try {
       const result = await new Promise<{ secure_url: string }>((resolve, reject) => {
         cloudinary.uploader
           .upload_stream(
-            { folder: 'content', public_id: `${Date.now()}`, resource_type: 'auto' },
+            { folder: 'content', public_id: publicId, resource_type: isImage ? 'image' : 'raw' },
             (error, uploaded) =>
               error ? reject(error) : resolve(uploaded as { secure_url: string }),
           )
@@ -242,7 +253,15 @@ contentRouter.post(
       return;
     }
     const id = String(Date.now());
-    const data = { ...NEW_ITEM_TEMPLATE[list], order: Date.now() };
+    // Fields the caller supplies win over the template. The portal composes a new item in the
+    // browser and only sends it when Save is pressed, so creation carries its content — it used
+    // to publish an empty placeholder on the click of "+ Nieuw item", which is how a blank team
+    // member reached the live site. Same whitelist the update route uses.
+    const data = {
+      ...NEW_ITEM_TEMPLATE[list],
+      order: Date.now(),
+      ...pick(req.body as Record<string, unknown>, LIST_FIELDS[list]),
+    };
     await db.collection(list).doc(id).set(data);
     // The id is a string here, same as every other created item's id in mergeList's
     // "created" branch below — Firestore doc keys are always strings, so a bundled item's

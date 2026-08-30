@@ -301,8 +301,21 @@ type FieldType = 'text' | 'textarea' | 'image' | 'file';
 type FieldConfig = { key: string; label: string; type: FieldType };
 type Draft = Record<string, unknown>;
 
+/**
+ * A one-line status for an editor.
+ *
+ * 'busy' exists because a disabled control says nothing. An upload can take several seconds,
+ * and with only the buttons greyed out the portal looks broken rather than working — which is
+ * exactly how a duplicate team member got created, by clicking again during an upload.
+ *
+ * Only 'ok' clears itself: a success message is noise a moment later, while an error and an
+ * in-progress message both need to stay until something replaces them.
+ */
 function useStatus() {
-  const [status, setStatus] = useState<{ type: 'ok' | 'error'; message: string } | null>(null);
+  const [status, setStatus] = useState<{
+    type: 'ok' | 'error' | 'busy';
+    message: string;
+  } | null>(null);
   useEffect(() => {
     if (status?.type !== 'ok') return;
     const t = setTimeout(() => setStatus(null), 2500);
@@ -594,6 +607,14 @@ function ListEditor({
 }) {
   const [busy, setBusy] = useState<string | null>(null);
   const [status, setStatus] = useStatus();
+  /**
+   * Items composed here but not yet sent.
+   *
+   * "+ Nieuw item" used to create one on the server immediately, so a click published an empty
+   * placeholder to the live site — a blank team member appeared on qalor.nl that way. Nothing
+   * leaves the browser now until Save.
+   */
+  const [pending, setPending] = useState<Draft[]>([]);
   const sorted = [...items].sort(
     (a, b) => (((a as Draft).order as number) ?? 0) - (((b as Draft).order as number) ?? 0),
   );
@@ -621,25 +642,42 @@ function ListEditor({
     });
   }
 
+  // Pending items sort last: they have the newest order, and a new row appearing at the bottom
+  // is where the eye already is after pressing the button.
+  const rows: Array<{ item: Draft; pending: boolean }> = [
+    ...sorted.map((item) => ({ item: item as Draft, pending: false })),
+    ...pending.map((item) => ({ item, pending: true })),
+  ];
+
   return (
     <div>
-      {sorted.map((item, index) => (
+      {rows.map(({ item, pending: isPending }, index) => (
         <ListItemEditor
-          key={String((item as Draft).id)}
+          key={String(item.id)}
           list={list}
-          item={item as Draft}
+          item={item}
           fields={fields}
-          label={itemLabel(item as Draft)}
-          busy={busy === String((item as Draft).id)}
+          label={itemLabel(item)}
+          pending={isPending}
+          busy={busy === String(item.id)}
           isFirst={index === 0}
           isLast={index === sorted.length - 1}
-          onMove={(dir) => move(item as Draft, dir)}
-          onDelete={() =>
-            withStatus(String((item as Draft).id), () =>
-              apiDeleteItem(list, (item as Draft).id as string | number),
-            )
-          }
-          onSaved={onSaved}
+          onMove={(dir) => move(item, dir)}
+          onDelete={() => {
+            // A pending item exists only here, so discarding it is local. Removing a published
+            // one still goes to the server.
+            if (isPending) {
+              setPending((p) => p.filter((i) => i.id !== item.id));
+              return;
+            }
+            withStatus(String(item.id), () => apiDeleteItem(list, item.id as string | number));
+          }}
+          onSaved={async () => {
+            // Once created, the item comes back from the refresh as a real one — so drop the
+            // local copy, or it would show twice.
+            setPending((p) => p.filter((i) => i.id !== item.id));
+            await onSaved();
+          }}
           normalizeIn={normalizeIn}
           normalizeOut={normalizeOut}
         />
@@ -648,7 +686,15 @@ function ListEditor({
       <button
         type="button"
         className="admin-btn admin-btn-secondary"
-        onClick={() => withStatus('new', () => apiCreateItem(list).then(() => {}))}
+        disabled={busy !== null}
+        onClick={() =>
+          setPending((p) => [
+            ...p,
+            // A temporary key for React and for the draft; the server assigns the real id when
+            // this is saved. Prefixed so it can never be mistaken for one.
+            { id: `new-${Date.now()}`, order: Date.now() } as Draft,
+          ])
+        }
       >
         + Nieuw item
       </button>
@@ -661,6 +707,7 @@ function ListItemEditor({
   item,
   fields,
   label,
+  pending,
   busy: reordering,
   isFirst,
   isLast,
@@ -674,6 +721,8 @@ function ListItemEditor({
   item: Draft;
   fields: FieldConfig[];
   label: string;
+  /** Composed in the browser and never sent, so Save creates it rather than updating. */
+  pending: boolean;
   busy: boolean;
   isFirst: boolean;
   isLast: boolean;
@@ -700,9 +749,12 @@ function ListItemEditor({
     const merged = overrides ? { ...draft, ...overrides } : draft;
     const out = normalizeOut ? normalizeOut(merged) : merged;
     setBusy(true);
-    setStatus(null);
+    setStatus({ type: 'busy', message: 'Bezig met opslaan…' });
     try {
-      await apiUpdateItem(list, item.id as string | number, out);
+      // A pending item has never been sent, so this is its creation. Everything it carries —
+      // including a file uploaded a moment ago — travels with it.
+      if (pending) await apiCreateItem(list, out as Record<string, unknown>);
+      else await apiUpdateItem(list, item.id as string | number, out);
       await onSaved();
       setStatus({ type: 'ok', message: 'Opgeslagen' });
     } catch (err) {
@@ -712,15 +764,23 @@ function ListItemEditor({
     }
   }
 
+  /**
+   * Puts a file in storage and holds its URL in the draft. It deliberately does not save.
+   *
+   * The file has to be uploaded now — that is the only way to have a URL to preview from — but
+   * nothing reaches the live site until Save is pressed, which is what the rest of this editor
+   * already promised and this one path used to break.
+   */
   async function upload(key: string, file: File) {
     setBusy(true);
-    setStatus(null);
+    setStatus({ type: 'busy', message: 'Bezig met uploaden…' });
     try {
       const url = await apiUploadFile(file);
       setDraft((d) => ({ ...d, [key]: url }));
-      await save({ [key]: url });
+      setStatus({ type: 'ok', message: 'Geüpload — nog niet opgeslagen' });
     } catch (err) {
       setStatus({ type: 'error', message: (err as Error).message });
+    } finally {
       setBusy(false);
     }
   }
@@ -730,10 +790,21 @@ function ListItemEditor({
       <div className="admin-item-header">
         <strong>{label}</strong>
         <div className="admin-reorder">
-          <button type="button" disabled={isFirst || reordering} onClick={() => onMove(-1)}>
+          <button
+            type="button"
+            // Ordering belongs to published items. A pending one is not in the list move()
+            // searches, so the arrows would either pick the wrong neighbour or send an id the
+            // server has never seen.
+            disabled={pending || isFirst || reordering}
+            onClick={() => onMove(-1)}
+          >
             ↑
           </button>
-          <button type="button" disabled={isLast || reordering} onClick={() => onMove(1)}>
+          <button
+            type="button"
+            disabled={pending || isLast || reordering}
+            onClick={() => onMove(1)}
+          >
             ↓
           </button>
         </div>
@@ -757,17 +828,19 @@ function ListItemEditor({
           disabled={busy}
           onClick={() => save()}
         >
-          Opslaan
+          {busy ? 'Bezig…' : 'Opslaan'}
         </button>
         <button
           type="button"
           className="admin-btn admin-btn-danger"
           disabled={busy}
           onClick={() => {
-            if (confirm(`"${label}" verwijderen?`)) onDelete();
+            // Nothing to confirm for an item that was never published: discarding it costs
+            // nothing, and asking implies it exists somewhere it does not.
+            if (pending || confirm(`"${label}" verwijderen?`)) onDelete();
           }}
         >
-          Verwijderen
+          {pending ? 'Annuleren' : 'Verwijderen'}
         </button>
         {status && <span className={`admin-status ${status.type}`}>{status.message}</span>}
       </div>
