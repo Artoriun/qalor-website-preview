@@ -345,18 +345,29 @@ function Field({
   onChange,
   onUpload,
   busy,
+  scope,
 }: {
   field: FieldConfig;
   value: unknown;
   onChange: (value: string) => void;
   onUpload: (file: File) => void;
   busy: boolean;
+  /**
+   * What this field belongs to — a list item's id, or the singleton's name.
+   *
+   * The DOM id used to be the field key alone, so every team member's photo input was
+   * id="photoUrl". A label resolves htmlFor against the first match in the document, so
+   * tapping "Bestand kiezen" on a newly added member opened the first member's file picker,
+   * scrolled the page up to it, and uploaded the image onto that member instead.
+   */
+  scope: string;
 }) {
+  const inputId = `${scope}-${field.key}`;
   if (field.type === 'image' || field.type === 'file') {
     const url = typeof value === 'string' ? value : '';
     return (
       <div className="admin-field">
-        <label htmlFor={field.key}>{field.label}</label>
+        <label htmlFor={inputId}>{field.label}</label>
         {field.type === 'image' && url && (
           <div className="admin-image-preview">
             <img src={optimizeUrl(url, 120)} alt="" />
@@ -372,7 +383,7 @@ function Field({
         )}
         <div className="admin-file">
           <input
-            id={field.key}
+            id={inputId}
             type="file"
             className="admin-file-input"
             accept={field.type === 'image' ? 'image/*' : 'application/pdf'}
@@ -383,7 +394,7 @@ function Field({
               e.target.value = '';
             }}
           />
-          <label htmlFor={field.key} className="admin-file-label">
+          <label htmlFor={inputId} className="admin-file-label">
             Bestand kiezen
           </label>
           <span className="admin-file-name">
@@ -397,9 +408,9 @@ function Field({
   if (field.type === 'textarea') {
     return (
       <div className="admin-field">
-        <label htmlFor={field.key}>{field.label}</label>
+        <label htmlFor={inputId}>{field.label}</label>
         <textarea
-          id={field.key}
+          id={inputId}
           value={typeof value === 'string' ? value : ''}
           onChange={(e) => onChange(e.target.value)}
         />
@@ -409,9 +420,9 @@ function Field({
 
   return (
     <div className="admin-field">
-      <label htmlFor={field.key}>{field.label}</label>
+      <label htmlFor={inputId}>{field.label}</label>
       <input
-        id={field.key}
+        id={inputId}
         type="text"
         value={typeof value === 'string' ? value : ''}
         onChange={(e) => onChange(e.target.value)}
@@ -475,6 +486,7 @@ function SingletonEditor({
           field={f}
           value={draft[f.key]}
           busy={busy}
+          scope={id}
           onChange={(v) => setDraft((d) => ({ ...d, [f.key]: v }))}
           onUpload={(file) => upload(f.key, file)}
         />
@@ -545,6 +557,7 @@ function AboutEditor({ values, onSaved }: { values: Draft; onSaved: () => Promis
   return (
     <div className="admin-card">
       <Field
+        scope="about"
         field={{ key: 'eyebrow', label: 'Label', type: 'text' }}
         value={draft.eyebrow}
         busy={busy}
@@ -552,6 +565,7 @@ function AboutEditor({ values, onSaved }: { values: Draft; onSaved: () => Promis
         onUpload={() => {}}
       />
       <Field
+        scope="about"
         field={{ key: 'heading', label: 'Titel', type: 'text' }}
         value={draft.heading}
         busy={busy}
@@ -559,6 +573,7 @@ function AboutEditor({ values, onSaved }: { values: Draft; onSaved: () => Promis
         onUpload={() => {}}
       />
       <Field
+        scope="about"
         field={{ key: 'image', label: 'Afbeelding', type: 'image' }}
         value={draft.image}
         busy={busy}
@@ -570,6 +585,7 @@ function AboutEditor({ values, onSaved }: { values: Draft; onSaved: () => Promis
       {blocks.map((block) => (
         <div key={block.id} className="admin-card">
           <Field
+            scope="about"
             field={{ key: `${block.id}-title`, label: 'Titel', type: 'text' }}
             value={block.title}
             busy={busy}
@@ -577,6 +593,7 @@ function AboutEditor({ values, onSaved }: { values: Draft; onSaved: () => Promis
             onUpload={() => {}}
           />
           <Field
+            scope="about"
             field={{ key: `${block.id}-body`, label: 'Tekst', type: 'textarea' }}
             value={block.body}
             busy={busy}
@@ -871,6 +888,7 @@ function ListItemEditor({
           field={f}
           value={draft[f.key]}
           busy={busy}
+          scope={`${list}-${item.id}`}
           onChange={(v) => setDraft((d) => ({ ...d, [f.key]: v }))}
           onUpload={(file) => upload(f.key, file)}
         />

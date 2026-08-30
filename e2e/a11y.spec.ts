@@ -101,6 +101,61 @@ test('the mobile dropdown menu has no accessibility violations', async ({ page }
 // there's no session to log in with here — this covers the sign-in screen itself, which is
 // still real coverage: it's the one admin screen every visitor who finds /admin actually
 // reaches, using the same reused <Navbar/> header as the rest of the portal.
+/**
+ * The portal behind the sign-in, which nothing swept until a duplicate-id bug shipped.
+ *
+ * Every field's DOM id was the field key alone, so all four team members had an input with
+ * id="photoUrl". A label resolves htmlFor against the first match in the document, so tapping
+ * "Bestand kiezen" on a newly added member opened the *first* member's file picker, scrolled
+ * the page up to it, and uploaded the photo onto the wrong person.
+ *
+ * axe does not catch this: duplicate-id-active was removed in axe-core 4.10, and this suite is
+ * on 4.13. The sweeps below are still worth having — nothing had ever audited the portal — but
+ * the duplicate ids need their own assertion, which is the test after them.
+ *
+ * The gate is a plain localStorage read, so a token that never leaves the browser is enough to
+ * render the portal — the server checks properly on every request it makes.
+ */
+async function openPortal(page: Page, tab: string) {
+  await page.addInitScript(() => localStorage.setItem('admin_token', 'e2e-not-verified-here'));
+  await page.goto('/admin');
+  // Scoped to the tab strip: the navbar behind the portal has buttons with the same words.
+  await page.locator('.admin-tab', { hasText: new RegExp(`^${tab}$`) }).click();
+}
+
+test('the admin team editor has no accessibility violations', async ({ page }) => {
+  await openPortal(page, 'Team');
+  await expect(page.locator('.admin-card').first()).toBeVisible();
+  await assertNoViolations(page);
+});
+
+test('the admin projects editor has no accessibility violations', async ({ page }) => {
+  // A second list, because the ids are built per item and per list — one list passing does not
+  // prove the scheme holds where two lists render the same field keys.
+  await openPortal(page, 'Projecten');
+  await expect(page.locator('.admin-card').first()).toBeVisible();
+  await assertNoViolations(page);
+});
+
+/**
+ * Ids have to be unique, and no accessibility rule available here enforces it any more.
+ *
+ * This is the guard for the bug above: a repeated id makes every htmlFor in the list point at
+ * the first match, so a control silently operates on someone else's row.
+ */
+for (const tab of ['Team', 'Projecten', 'Werkproces'] as const) {
+  test(`the ${tab} editor gives every field its own id`, async ({ page }) => {
+    await openPortal(page, tab);
+    await expect(page.locator('.admin-card').first()).toBeVisible();
+
+    const duplicates = await page.evaluate(() => {
+      const ids = [...document.querySelectorAll('[id]')].map((el) => el.id);
+      return [...new Set(ids.filter((id, i) => ids.indexOf(id) !== i))];
+    });
+    expect(duplicates, 'these ids appear more than once on the page').toEqual([]);
+  });
+}
+
 test('the admin sign-in screen has no accessibility violations', async ({ page }) => {
   await page.goto('/admin');
   await page.waitForSelector('#password');
