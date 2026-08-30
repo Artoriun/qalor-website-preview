@@ -245,3 +245,15 @@
   cursor: pointer;
   color: var(--text-heading);
 }
+
+/* An item hidden from the site still shows here, so it has to read as hidden rather than as
+   an ordinary row — otherwise the portal and the site disagree with nothing to explain it. */
+.admin-card-hidden {
+  opacity: 0.6;
+}
+
+.admin-hidden-tag {
+  font-weight: 400;
+  font-style: italic;
+  opacity: 0.8;
+}

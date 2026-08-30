@@ -1,10 +1,11 @@
-import type { AboutBlock } from '@qalor/shared';
-import { type FormEvent, useEffect, useState } from 'react';
+import { type AboutBlock, DEFAULT_SITE_CONTENT } from '@qalor/shared';
+import { type FormEvent, useCallback, useEffect, useState } from 'react';
 import Navbar from '../components/Navbar/Navbar';
 import { useContent } from '../context/ContentContext';
 import {
   apiCreateItem,
   apiDeleteItem,
+  apiGetAllContent,
   apiLogin,
   apiRevokeAll,
   apiUpdateItem,
@@ -32,8 +33,22 @@ export default function Admin() {
 }
 
 function AdminGate() {
-  const { content, refresh } = useContent();
+  // Seeded from the public content so the panel has something to render immediately, then
+  // replaced by the portal's own view — which differs by including items hidden from the site.
+  const { content: publicContent, refresh: refreshPublic } = useContent();
+  const [content, setContent] = useState(publicContent);
   const [signedIn, setSignedIn] = useState(() => !!getToken());
+
+  const refresh = useCallback(async () => {
+    const all = await apiGetAllContent();
+    setContent(all);
+    // The public context feeds the live site preview behind the portal, so keep it current too.
+    await refreshPublic();
+  }, [refreshPublic]);
+
+  useEffect(() => {
+    if (signedIn) void refresh().catch(() => {});
+  }, [signedIn, refresh]);
 
   if (!signedIn) return <SignIn onSuccess={() => setSignedIn(true)} />;
 
@@ -615,6 +630,16 @@ function ListEditor({
    * leaves the browser now until Save.
    */
   const [pending, setPending] = useState<Draft[]>([]);
+  /**
+   * Which items ship with the site rather than having been created here.
+   *
+   * They cannot be deleted, only hidden: removing a bundled item's override just reveals the
+   * built-in version again. Knowing which is which is what lets the buttons say what they will
+   * actually do.
+   */
+  const bundledIds = new Set(
+    (DEFAULT_SITE_CONTENT[list] as Array<{ id: unknown }>).map((i) => String(i.id)),
+  );
   const sorted = [...items].sort(
     (a, b) => (((a as Draft).order as number) ?? 0) - (((b as Draft).order as number) ?? 0),
   );
@@ -663,15 +688,31 @@ function ListEditor({
           isFirst={index === 0}
           isLast={index === sorted.length - 1}
           onMove={(dir) => move(item, dir)}
+          bundled={bundledIds.has(String(item.id))}
           onDelete={() => {
-            // A pending item exists only here, so discarding it is local. Removing a published
-            // one still goes to the server.
+            // Three different things wear the same word. A pending item exists only in this
+            // browser, so it is dropped. A created one is deleted outright. A bundled one
+            // cannot be deleted at all — removing its override just reveals the built-in
+            // version — so it is hidden instead, which the portal can still see and undo.
             if (isPending) {
               setPending((p) => p.filter((i) => i.id !== item.id));
               return;
             }
-            withStatus(String(item.id), () => apiDeleteItem(list, item.id as string | number));
+            const id = item.id as string | number;
+            withStatus(String(item.id), () =>
+              bundledIds.has(String(item.id))
+                ? apiUpdateItem(list, id, { deleted: true })
+                : apiDeleteItem(list, id),
+            );
           }}
+          onShow={() =>
+            withStatus(String(item.id), () =>
+              apiUpdateItem(list, item.id as string | number, { deleted: false }),
+            )
+          }
+          onReset={() =>
+            withStatus(String(item.id), () => apiDeleteItem(list, item.id as string | number))
+          }
           onSaved={async () => {
             // Once created, the item comes back from the refresh as a real one — so drop the
             // local copy, or it would show twice.
@@ -708,11 +749,14 @@ function ListItemEditor({
   fields,
   label,
   pending,
+  bundled,
   busy: reordering,
   isFirst,
   isLast,
   onMove,
   onDelete,
+  onShow,
+  onReset,
   onSaved,
   normalizeIn,
   normalizeOut,
@@ -723,11 +767,17 @@ function ListItemEditor({
   label: string;
   /** Composed in the browser and never sent, so Save creates it rather than updating. */
   pending: boolean;
+  /** Ships with the site. Cannot be deleted — only hidden, or reset to how it shipped. */
+  bundled: boolean;
   busy: boolean;
   isFirst: boolean;
   isLast: boolean;
   onMove: (direction: -1 | 1) => void;
   onDelete: () => void;
+  /** Un-hides a bundled item that was hidden from the site. */
+  onShow: () => void;
+  /** Drops a bundled item's override entirely, restoring the version that ships with the site. */
+  onReset: () => void;
   onSaved: () => Promise<void>;
   normalizeIn?: (item: Draft) => Draft;
   normalizeOut?: (draft: Draft) => Draft;
@@ -785,10 +835,15 @@ function ListItemEditor({
     }
   }
 
+  const hidden = draft.deleted === true;
+
   return (
-    <div className="admin-card">
+    <div className={`admin-card${hidden ? ' admin-card-hidden' : ''}`}>
       <div className="admin-item-header">
-        <strong>{label}</strong>
+        <strong>
+          {label}
+          {hidden && <span className="admin-hidden-tag"> — verborgen op de site</span>}
+        </strong>
         <div className="admin-reorder">
           <button
             type="button"
@@ -836,12 +891,35 @@ function ListItemEditor({
           disabled={busy}
           onClick={() => {
             // Nothing to confirm for an item that was never published: discarding it costs
-            // nothing, and asking implies it exists somewhere it does not.
-            if (pending || confirm(`"${label}" verwijderen?`)) onDelete();
+            // nothing, and asking implies it exists somewhere it does not. Hiding is likewise
+            // reversible, so it does not need a warning either — only a real delete does.
+            if (pending || bundled || confirm(`"${label}" definitief verwijderen?`)) onDelete();
           }}
         >
-          {pending ? 'Annuleren' : 'Verwijderen'}
+          {pending ? 'Annuleren' : bundled ? 'Verbergen' : 'Verwijderen'}
         </button>
+        {hidden && (
+          <button
+            type="button"
+            className="admin-btn admin-btn-secondary"
+            disabled={busy}
+            onClick={onShow}
+          >
+            Tonen
+          </button>
+        )}
+        {bundled && !pending && (
+          <button
+            type="button"
+            className="admin-btn admin-btn-secondary"
+            disabled={busy}
+            onClick={() => {
+              if (confirm(`"${label}" terugzetten naar de originele versie?`)) onReset();
+            }}
+          >
+            Herstellen
+          </button>
+        )}
         {status && <span className={`admin-status ${status.type}`}>{status.message}</span>}
       </div>
     </div>

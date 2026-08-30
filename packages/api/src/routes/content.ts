@@ -111,10 +111,17 @@ function overridesById(snap: MemorySnapshot): Record<string, Record<string, unkn
   return overrides;
 }
 
-/** Bundled defaults + per-item Firestore overrides, soft-deletes filtered, sorted by order. */
+/**
+ * Bundled defaults + per-item Firestore overrides, soft-deletes filtered, sorted by order.
+ *
+ * `includeHidden` is for the admin portal. A hidden item is still an override document, so
+ * without a way to see one the portal could hide a bundled member and never get it back —
+ * a one-way door, and worse than not offering the feature.
+ */
 function mergeList(
   bundled: Array<Record<string, unknown>>,
   snap: MemorySnapshot,
+  includeHidden = false,
 ): Array<Record<string, unknown>> {
   const overrides = overridesById(snap);
   const bundledIds = new Set(bundled.map((item) => String(item.id)));
@@ -129,7 +136,7 @@ function mergeList(
     .map(([id, data]) => ({ id, ...data }));
 
   return [...merged, ...created]
-    .filter((item) => !item.deleted)
+    .filter((item) => includeHidden || !item.deleted)
     .sort((a, b) => ((a.order as number) ?? 0) - ((b.order as number) ?? 0));
 }
 
@@ -138,37 +145,56 @@ function mergeList(
  * a visitor should see the site rather than an error. That does mean this endpoint cannot be
  * used to detect a broken data layer — /health/deps exists for that.
  */
+async function buildContent(includeHidden: boolean): Promise<SiteContent> {
+  const [siteSnap, projectsSnap, teamSnap, stepsSnap] = await Promise.all([
+    db.collection('siteContent').get(),
+    db.collection('projects').get(),
+    db.collection('team').get(),
+    db.collection('workProcessSteps').get(),
+  ]);
+  const siteOverrides = overridesById(siteSnap);
+  const merged = (id: string) => ({ ...SINGLETON_DEFAULTS[id], ...(siteOverrides[id] ?? {}) });
+
+  return {
+    hero: merged('hero') as SiteContent['hero'],
+    about: merged('about') as SiteContent['about'],
+    workProcessIntro: merged('workProcessIntro') as SiteContent['workProcessIntro'],
+    workProcessSteps: mergeList(
+      WORK_PROCESS_STEPS,
+      stepsSnap,
+      includeHidden,
+    ) as SiteContent['workProcessSteps'],
+    projectsIntro: merged('projectsIntro') as SiteContent['projectsIntro'],
+    projects: mergeList(PROJECTS, projectsSnap, includeHidden) as SiteContent['projects'],
+    teamIntro: merged('teamIntro') as SiteContent['teamIntro'],
+    team: mergeList(TEAM_MEMBERS, teamSnap, includeHidden) as SiteContent['team'],
+    footer: merged('footer') as SiteContent['footer'],
+  };
+}
+
 contentRouter.get(
   '/',
   asyncHandler(async (_req, res) => {
     try {
-      const [siteSnap, projectsSnap, teamSnap, stepsSnap] = await Promise.all([
-        db.collection('siteContent').get(),
-        db.collection('projects').get(),
-        db.collection('team').get(),
-        db.collection('workProcessSteps').get(),
-      ]);
-      const siteOverrides = overridesById(siteSnap);
-      const merged = (id: string) => ({ ...SINGLETON_DEFAULTS[id], ...(siteOverrides[id] ?? {}) });
-
-      const content: SiteContent = {
-        hero: merged('hero') as SiteContent['hero'],
-        about: merged('about') as SiteContent['about'],
-        workProcessIntro: merged('workProcessIntro') as SiteContent['workProcessIntro'],
-        workProcessSteps: mergeList(
-          WORK_PROCESS_STEPS,
-          stepsSnap,
-        ) as SiteContent['workProcessSteps'],
-        projectsIntro: merged('projectsIntro') as SiteContent['projectsIntro'],
-        projects: mergeList(PROJECTS, projectsSnap) as SiteContent['projects'],
-        teamIntro: merged('teamIntro') as SiteContent['teamIntro'],
-        team: mergeList(TEAM_MEMBERS, teamSnap) as SiteContent['team'],
-        footer: merged('footer') as SiteContent['footer'],
-      };
-      res.json(content);
+      res.json(await buildContent(false));
     } catch {
       res.json(DEFAULT_SITE_CONTENT);
     }
+  }),
+);
+
+/**
+ * The same content, including items hidden from the site, for the portal.
+ *
+ * Registered above the '/:list' routes and authenticated: a visitor must never see a hidden
+ * item, and unlike the public route this one does not fall back to the bundled content on a
+ * store error — an editor silently shown defaults would overwrite real data on the next save.
+ */
+contentRouter.get(
+  '/all',
+  requireAuth,
+  asyncHandler(async (_req, res) => {
+    res.json(await buildContent(true));
   }),
 );
 
