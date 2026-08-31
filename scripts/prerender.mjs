@@ -516,6 +516,20 @@ async function measureH1(url, javaScriptEnabled) {
   await measurePage.goto(url, { waitUntil: 'load' });
   // Let hydration and the Hero's load animation settle before measuring the JS pass.
   if (javaScriptEnabled) await measurePage.waitForTimeout(900);
+  /**
+   * Both passes wait for the webfont, or this gate reports a difference that is only timing.
+   *
+   * @fontsource ships `swap`, so a heading paints in the fallback face and reflows when Inter
+   * arrives — the note further up this file records the same effect widening the hero. The JS
+   * pass had 900ms and almost always caught the swapped face; the no-JS pass measured
+   * immediately and sometimes caught the fallback, whose wider metrics wrapped
+   * /warmtenet-business-case/ onto a third line: 105px against the other pass's 70px. It
+   * failed roughly one run in fifteen and passed on retry, which is the worst kind of red.
+   *
+   * `load` is not enough on its own: it does not wait for a font requested by CSS, and the
+   * race is decided in the milliseconds after it.
+   */
+  await measurePage.evaluate(() => document.fonts.ready.then(() => undefined));
   const measurement = await measurePage.evaluate(() => {
     const h1 = document.querySelector('h1');
     if (!h1) return null;
