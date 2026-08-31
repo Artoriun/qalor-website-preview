@@ -1,3 +1,4 @@
+import { errorHandler } from './errorHandler';
 import './loadEnv';
 import cors from 'cors';
 import express from 'express';
@@ -100,13 +101,7 @@ app.use('/api/content', contentRouter);
  * request was fine) rather than 500, so the admin portal can say something useful instead
  * of "unknown error".
  */
-app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
-  const unconfigured = err.message?.includes('not configured');
-  console.error('[api]', err.message);
-  res
-    .status(unconfigured ? 503 : 500)
-    .json({ error: unconfigured ? err.message : 'Internal error' });
-});
+app.use(errorHandler);
 
 // A rejection that somehow escapes the wrapper is logged rather than fatal. Without this,
 // Node's default is to terminate — which on a free tier means a cold start for the next
