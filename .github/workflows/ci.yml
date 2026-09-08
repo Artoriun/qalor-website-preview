@@ -413,3 +413,60 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v5
+
+  sync-preview:
+    name: Sync the public preview mirror
+    needs: [deploy]
+    # Production pushes only, and only from the source repository — the mirror runs its own
+    # copy of this file, and without the repository check it would try to sync itself.
+    #
+    # Dormant until PREVIEW_TOKEN exists. The mirror is a different repository, so the
+    # automatic GITHUB_TOKEN cannot reach it: that token is scoped to the repository running
+    # the workflow. Skipping quietly is deliberate — a missing credential should not fail a
+    # production deploy that already succeeded.
+    if: |
+      github.repository == 'Artoriun/qalor' &&
+      github.ref == 'refs/heads/master' &&
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    concurrency:
+      group: sync-preview
+      cancel-in-progress: false
+    steps:
+      - name: Check the token is configured
+        id: gate
+        env:
+          PREVIEW_TOKEN: ${{ secrets.PREVIEW_TOKEN }}
+        run: |
+          if [ -z "$PREVIEW_TOKEN" ]; then
+            echo "PREVIEW_TOKEN is not set — skipping. See scripts/sync-preview.mjs." >> "$GITHUB_STEP_SUMMARY"
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Full history and a real `master` ref: sync-preview.mjs resolves master and detaches
+      # from it, which a shallow detached checkout cannot do.
+      - uses: actions/checkout@v7
+        if: steps.gate.outputs.ready == 'true'
+        with:
+          ref: master
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v7
+        if: steps.gate.outputs.ready == 'true'
+        with:
+          node-version: 22
+
+      - name: Sync
+        if: steps.gate.outputs.ready == 'true'
+        env:
+          PREVIEW_TOKEN: ${{ secrets.PREVIEW_TOKEN }}
+        run: |
+          # The script commits (to drop dependabot.yml) before pushing, and a runner has no
+          # git identity of its own.
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git remote add preview \
+            "https://x-access-token:${PREVIEW_TOKEN}@github.com/Artoriun/qalor-website-preview.git"
+          npm run sync:preview
