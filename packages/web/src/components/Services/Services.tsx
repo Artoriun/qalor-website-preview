@@ -26,13 +26,20 @@ export default function Services() {
           uitgewerkt tot het detailniveau waarop een besluit genomen kan worden.
         </p>
         <ul className="services-list">
-          {SERVICE_PAGES.map((page) => (
+          {/* Dutch pages only. The English set is reached from the language link below, not
+              mixed into this list — one crawl path per language. */}
+          {SERVICE_PAGES.filter((page) => (page.lang ?? 'nl') === 'nl').map((page) => (
             <li key={page.slug}>
               <a href={`${import.meta.env.BASE_URL}${page.slug}/`}>{page.h1}</a>
               <p>{page.description}</p>
             </li>
           ))}
         </ul>
+        <p className="services-lang">
+          <a href={`${import.meta.env.BASE_URL}en/`} hrefLang="en">
+            Qalor in English
+          </a>
+        </p>
       </div>
     </section>
   );

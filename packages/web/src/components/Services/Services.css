@@ -64,3 +64,12 @@
     padding: 60px 15px;
   }
 }
+
+.services-lang {
+  margin: 1.75rem 0 0;
+}
+
+.services-lang a {
+  color: var(--accent-text-body);
+  font-size: 0.95rem;
+}
