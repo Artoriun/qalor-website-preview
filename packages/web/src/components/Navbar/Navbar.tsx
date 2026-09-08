@@ -190,6 +190,16 @@ const Navbar = () => {
           </li>
           <li>
             <button
+              onClick={handleNavClick('diensten')}
+              onTouchEnd={handleTouchEnd}
+              style={navButtonStyle}
+              type="button"
+            >
+              Diensten
+            </button>
+          </li>
+          <li>
+            <button
               onClick={handleNavClick('projects')}
               onTouchEnd={handleTouchEnd}
               style={navButtonStyle}
@@ -300,6 +310,14 @@ const Navbar = () => {
                   style={{ background: 'none', border: 'none', width: '100%', textAlign: 'left' }}
                 >
                   Ons werkproces
+                </button>
+                <button
+                  type="button"
+                  onClick={() => smoothScrollTo('diensten')}
+                  className="navbar-mobile-menu-item"
+                  style={{ background: 'none', border: 'none', width: '100%', textAlign: 'left' }}
+                >
+                  Diensten
                 </button>
                 <button
                   type="button"

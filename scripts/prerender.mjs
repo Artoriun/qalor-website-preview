@@ -70,8 +70,29 @@ const ROUTES = [
     title: p.title,
     description: p.description,
     service: p.h1,
+    lang: p.lang ?? 'nl',
+    faq: p.faq,
+    h1: p.h1,
   })),
 ];
+
+/**
+ * Which pages are translations of each other, both ways.
+ *
+ * Only one side declares `altSlug`, because keeping two declarations in step by hand is a
+ * promise nobody keeps — but hreflang has to be reciprocal or Google ignores it, so the
+ * reverse direction is derived here rather than written out.
+ */
+const ALTERNATES = new Map();
+for (const p of SERVICE_PAGES) {
+  if (!p.altSlug) continue;
+  const a = `/${p.slug}/`;
+  const b = `/${p.altSlug}/`;
+  const other = SERVICE_PAGES.find((q) => q.slug === p.altSlug);
+  if (!other) throw new Error(`altSlug '${p.altSlug}' on '${p.slug}' matches no page`);
+  ALTERNATES.set(a, { path: b, lang: other.lang ?? 'nl' });
+  ALTERNATES.set(b, { path: a, lang: p.lang ?? 'nl' });
+}
 
 const esc = (s) =>
   s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -290,8 +311,38 @@ const organization = {
   vatID: content.footer.btwNumber,
 };
 
+/**
+ * The team, as structured data.
+ *
+ * Qalor's case rests on who does the work — three specialists with over 130 years between
+ * them, more than 100 of those at heat utilities. That is a real authority signal and it was
+ * readable only as prose. Built from the same admin-editable team content the page renders,
+ * so it cannot drift from what a visitor sees.
+ */
+const people = content.team
+  // Not every entry is a person: the team grid carries a decorative image tile
+  // ({ id: 4, isImage: true }) with no name, and emitting a nameless Person would put an
+  // invalid node in the graph. The job title lives in `description` on this shape.
+  .filter((member) => member.name && !member.isImage)
+  .map((member) => ({
+    '@type': 'Person',
+    '@id': `${SITE}/#person-${member.id}`,
+    name: member.name,
+    ...(member.description ? { jobTitle: member.description } : {}),
+    worksFor: { '@id': orgId },
+  }));
+
+const website = {
+  '@type': 'WebSite',
+  '@id': `${SITE}/#website`,
+  url: `${SITE}/`,
+  name: SITE_TITLE,
+  publisher: { '@id': orgId },
+  inLanguage: 'nl-NL',
+};
+
 const jsonLdFor = (route) => {
-  const graph = [organization];
+  const graph = [organization, website, ...people];
   if (route.service) {
     graph.push({
       '@type': 'Service',
@@ -301,6 +352,29 @@ const jsonLdFor = (route) => {
       url: `${SITE}${route.path}`,
       provider: { '@id': orgId },
       areaServed: { '@type': 'Country', name: 'Nederland' },
+    });
+    // Where this page sits, so a result can show a path rather than a bare URL.
+    graph.push({
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Home', item: `${SITE}/` },
+        {
+          '@type': 'ListItem',
+          position: 2,
+          name: route.h1 ?? route.service,
+          item: `${SITE}${route.path}`,
+        },
+      ],
+    });
+  }
+  if (route.faq?.length) {
+    graph.push({
+      '@type': 'FAQPage',
+      mainEntity: route.faq.map((item) => ({
+        '@type': 'Question',
+        name: item.q,
+        acceptedAnswer: { '@type': 'Answer', text: item.a },
+      })),
     });
   }
   // Same '<' escape as the content script below, for the same reason: these strings are
@@ -317,7 +391,22 @@ const headFor = (route) => {
   return [
     ...(NOINDEX ? ['<meta name="robots" content="noindex, nofollow" />'] : []),
     `<link rel="canonical" href="${url}" />`,
+    // Reciprocal or not at all: a one-sided declaration is ignored. x-default points at the
+    // Dutch page, which is the one to serve when no language matches.
+    ...(ALTERNATES.has(route.path)
+      ? (() => {
+          const other = ALTERNATES.get(route.path);
+          const self = route.lang ?? 'nl';
+          const dutch = self === 'nl' ? route.path : other.path;
+          return [
+            `<link rel="alternate" hreflang="${self}" href="${esc(SITE)}${esc(route.path)}" />`,
+            `<link rel="alternate" hreflang="${other.lang}" href="${esc(SITE)}${esc(other.path)}" />`,
+            `<link rel="alternate" hreflang="x-default" href="${esc(SITE)}${esc(dutch)}" />`,
+          ];
+        })()
+      : []),
     '<meta property="og:type" content="website" />',
+    `<meta property="og:locale" content="${(route.lang ?? 'nl') === 'en' ? 'en_GB' : 'nl_NL'}" />`,
     `<meta property="og:title" content="${esc(route.title)}" />`,
     `<meta property="og:description" content="${esc(route.description)}" />`,
     `<meta property="og:url" content="${url}" />`,
@@ -360,6 +449,9 @@ for (const route of ROUTES) {
   const root = await capture(route.path);
   const html = template
     .replace('<html ', '<html data-prerendered ')
+    // The English pages must declare it. A page of English served as lang="nl" is a
+    // mismatch Google reads as a quality signal, and it undercuts the hreflang pair.
+    .replace(/(<html[^>]*\s)lang="nl"/, `$1lang="${route.lang ?? 'nl'}"`)
     .replace(
       /<meta\s+name="description"\s+content="[^"]*"\s*\/?>/,
       `<meta name="description" content="${esc(route.description)}" />`,

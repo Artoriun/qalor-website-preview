@@ -76,3 +76,56 @@
 .service-back a:focus-visible {
   text-decoration: underline;
 }
+
+/* The other landing pages, so the four form a crawlable group instead of four dead ends. */
+.service-siblings {
+  margin: 3rem 0 0;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+}
+
+.service-siblings h2 {
+  font-size: 1.1rem;
+  margin: 0 0 0.9rem;
+}
+
+.service-siblings ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem 1.6rem;
+}
+
+.service-siblings a {
+  color: var(--accent-text-body);
+  text-decoration: none;
+}
+
+.service-siblings a:hover,
+.service-siblings a:focus-visible {
+  text-decoration: underline;
+}
+
+/* Questions and answers. A definition list rather than headings: these are pairs, and it
+   keeps the page's heading outline to the sections that are actually sections. */
+.service-faq {
+  margin-top: 2.5rem;
+}
+
+.service-faq dl {
+  margin: 0;
+}
+
+.service-faq dt {
+  color: var(--text-heading);
+  font-weight: 600;
+  margin-top: 1.4rem;
+}
+
+.service-faq dd {
+  color: var(--text-body);
+  margin: 0.4rem 0 0;
+  line-height: 1.7;
+}

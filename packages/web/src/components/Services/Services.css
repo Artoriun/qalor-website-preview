@@ -1,0 +1,75 @@
+.services-section {
+  width: 100%;
+  padding: 80px 20px;
+  background-color: var(--bg-page);
+}
+
+.services-inner {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.services-section h2 {
+  color: var(--text-heading);
+  font-size: 2rem;
+  margin: 0 0 0.75rem;
+}
+
+.services-lead {
+  color: var(--text-body);
+  margin: 0 0 2rem;
+  max-width: 60ch;
+  line-height: 1.7;
+}
+
+.services-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 1.25rem;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+.services-list li {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1.25rem 1.4rem;
+}
+
+.services-list a {
+  color: var(--text-heading);
+  font-weight: 600;
+  font-size: 1.05rem;
+  text-decoration: none;
+  display: inline-block;
+  margin-bottom: 0.5rem;
+}
+
+.services-list a:hover,
+.services-list a:focus-visible {
+  color: var(--accent-text-body);
+  text-decoration: underline;
+}
+
+.services-list p {
+  color: var(--text-body);
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.65;
+}
+
+@media (max-width: 600px) {
+  .services-section {
+    padding: 60px 15px;
+  }
+}
+
+.services-lang {
+  margin: 1.75rem 0 0;
+}
+
+.services-lang a {
+  color: var(--accent-text-body);
+  font-size: 0.95rem;
+}

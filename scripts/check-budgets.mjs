@@ -27,7 +27,18 @@ const SHARED = new URL('../packages/shared/', import.meta.url).pathname;
 // reorder. Inlining removed the request instead and put it at ~1.25s. It is counted twice,
 // once in the entry chunk and once in the prerendered markup, because React has to render
 // the same src string it hydrates against.
-const BUDGET_GZIP = { '.js': true, '.css': true, initial: 95 * 1024 };
+// Raised to 100KB from 95KB when the site went from five landing pages to twelve. The copy
+// for those pages is ~8KB gzipped and rides in the entry chunk, because App.tsx needs
+// SERVICE_PAGES to match a path and Services.tsx needs it to list them.
+//
+// It can be moved off the entry by splitting SERVICE_PAGES into a light index and a separate
+// body map, so only the landing pages themselves pay for the prose. That was measured and
+// deliberately not done: it costs the single-source-of-truth property SEO.md advertises —
+// one edit adds a page, and the URL, the prerendered file, the sitemap entry and the schema
+// all follow — in exchange for ~8KB on a 96KB payload, under 2% and not something a visitor
+// perceives. Lazy-loading ServicePage was also tried and moved only 0.5KB, because the data
+// weighs and the component does not. Revisit if the page count grows much further.
+const BUDGET_GZIP = { '.js': true, '.css': true, initial: 100 * 1024 };
 
 // Lazy chunks used to be printed as "(not budgeted)", which meant nobody saw the CV modal
 // pull in a PDF viewer and its worker — 1.54MB transferred on click, to display a 102KB
