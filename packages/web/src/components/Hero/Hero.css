@@ -67,7 +67,7 @@
   text-align: left;
 }
 
-.hero-text h1 {
+.hero-headline {
   margin-bottom: 1rem;
   font-size: 4rem;
   font-weight: 700;
@@ -75,7 +75,7 @@
   color: #2b1400;
 }
 
-.hero-text h2 {
+.hero-subheadline {
   margin-bottom: 2rem;
   font-size: 2rem;
   font-weight: 500;
@@ -209,11 +209,11 @@
     text-align: center;
   }
 
-  .hero-text h1 {
+  .hero-headline {
     font-size: 3rem;
   }
 
-  .hero-text h2 {
+  .hero-subheadline {
     font-size: 1.6rem;
   }
 

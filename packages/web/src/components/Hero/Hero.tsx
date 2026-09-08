@@ -44,8 +44,17 @@ const Hero = () => {
         <Particles />
         <div className="hero-grid">
           <div className="hero-text">
-            <h1>{headline}</h1>
-            <h2>{subheadline}</h2>
+            {/* The descriptive line is the h1, not the welcoming one.
+                "Welkom op de website van Qalor" was the h1 — the strongest on-page signal
+                there is, spent on a phrase nobody searches — while "Energiedeskundigen
+                warmtenetten" sat under it as an h2.
+
+                The tags are swapped and the styling is not: the welcome still reads as the
+                big line, because heading level is semantics and not size. Both strings stay
+                admin-editable, so whatever the client puts in `subheadline` is now the h1 —
+                noted in SEO.md so the field keeps carrying something descriptive. */}
+            <p className="hero-headline">{headline}</p>
+            <h1 className="hero-subheadline">{subheadline}</h1>
             <div className="hero-actions">
               <button
                 type="button"
