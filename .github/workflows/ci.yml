@@ -127,6 +127,9 @@ jobs:
       - name: Build and prerender for audit
         run: npm run build && npm run prerender
 
+      - name: Check every landing page is linked
+        run: npm run check:links
+
       - name: Run the suite against the built output
         run: npm run test:e2e:dist
 

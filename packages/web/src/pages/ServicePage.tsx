@@ -1,4 +1,4 @@
-import type { ServicePage as ServicePageContent } from '@qalor/shared';
+import { SERVICE_PAGES, type ServicePage as ServicePageContent } from '@qalor/shared';
 import Footer from '../components/Footer/Footer';
 import Navbar from '../components/Navbar/Navbar';
 import './ServicePage.css';
@@ -16,6 +16,7 @@ import './ServicePage.css';
  * markup and no new dependencies.
  */
 export default function ServicePage({ page }: { page: ServicePageContent }) {
+  const siblings = SERVICE_PAGES.filter((p) => p.slug !== page.slug);
   return (
     <div className="service-page">
       <Navbar />
@@ -41,6 +42,23 @@ export default function ServicePage({ page }: { page: ServicePageContent }) {
               BASE_URL-prefixed, not a bare '/': under a project subpath a hardcoded '/'
               leaves the site altogether (github.io's own root), same trap Navbar.tsx's
               smoothScrollTo has. */}
+          {/* The other landing pages. Without these each page is a dead end that only
+              points back up to the home page, so the four never form a crawlable group and
+              none of them passes any equity to the others. Anchor text is the sibling's own
+              H1 for the same reason it is on the home page. */}
+          {siblings.length > 0 && (
+            <nav className="service-siblings" aria-label="Andere diensten">
+              <h2>Andere diensten</h2>
+              <ul>
+                {siblings.map((other) => (
+                  <li key={other.slug}>
+                    <a href={`${import.meta.env.BASE_URL}${other.slug}/`}>{other.h1}</a>
+                  </li>
+                ))}
+              </ul>
+            </nav>
+          )}
+
           <p className="service-back">
             <a href={`${import.meta.env.BASE_URL}#how-it-works`}>Bekijk ons volledige werkproces</a>
           </p>
