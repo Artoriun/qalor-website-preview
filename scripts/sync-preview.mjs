@@ -19,6 +19,17 @@
  * assembles what it publishes and simply never includes their dependabot.yml.
  *
  *   npm run sync:preview
+ *
+ * CI runs this too, in the `sync-preview` job after a successful production deploy, so the
+ * mirror does not drift while someone forgets. It had drifted several merges behind before
+ * that job existed. The job is dormant unless `PREVIEW_TOKEN` is set: the mirror is a
+ * different repository, and the automatic GITHUB_TOKEN is scoped to the one running the
+ * workflow, so it cannot push there.
+ *
+ * That token needs **Contents: read and write** and **Workflows: read and write** on
+ * Artoriun/qalor-website-preview. Workflows is the easy miss — this push writes
+ * .github/workflows/ci.yml into the mirror, and without that permission the push is rejected
+ * at the last step. The sibling starter repos hit exactly this.
  */
 
 import { execFileSync } from 'node:child_process';
