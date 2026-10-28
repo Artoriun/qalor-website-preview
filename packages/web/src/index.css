@@ -52,7 +52,13 @@
   --danger: #c0392b;
   --success: #1a7f37;
 
-  color-scheme: light;
+  /* `only`, not plain `light`: Chrome's auto dark theme (Android's "dark theme for sites",
+     on by default when the phone itself is dark) force-darkens any page whose color-scheme
+     doesn't include dark. Plain `light` let it repaint the light theme near-black, so on
+     those phones the toggle visibly did nothing in one direction. `only light` opts out
+     of that darkening; the dark theme below needs no equivalent because declaring `dark`
+     already opts out. */
+  color-scheme: only light;
 }
 
 :root[data-theme="dark"] {
